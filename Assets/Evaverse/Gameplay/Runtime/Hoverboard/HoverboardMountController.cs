@@ -1,4 +1,3 @@
-using Evaverse.Gameplay.Runtime.Avatar;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,7 +5,6 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 {
     public sealed class HoverboardMountController : MonoBehaviour
     {
-        [SerializeField] private AvatarMotor avatarMotor;
         [SerializeField] private CharacterController avatarController;
         [SerializeField] private HoverboardMotor hoverboardMotor;
         [SerializeField] private HoverboardMount hoverboardMount;
@@ -18,11 +16,6 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         private void Awake()
         {
-            if (avatarMotor == null)
-            {
-                avatarMotor = GetComponent<AvatarMotor>();
-            }
-
             if (avatarController == null)
             {
                 avatarController = GetComponent<CharacterController>();
@@ -79,11 +72,6 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
                 return;
             }
 
-            if (avatarMotor != null)
-            {
-                avatarMotor.enabled = false;
-            }
-
             if (avatarController != null)
             {
                 avatarController.enabled = false;
@@ -110,11 +98,6 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
             if (avatarController != null)
             {
                 avatarController.enabled = true;
-            }
-
-            if (avatarMotor != null)
-            {
-                avatarMotor.enabled = true;
             }
         }
 

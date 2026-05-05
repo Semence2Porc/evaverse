@@ -1,3 +1,4 @@
+using Evaverse.Gameplay.Runtime.Hoverboard;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,6 +20,9 @@ namespace Evaverse.Gameplay.Runtime.Avatar
         [SerializeField] private float minPitch = -55f;
         [SerializeField] private float maxPitch = 75f;
 
+        [Header("Mount")]
+        [SerializeField] private HoverboardMountController mountController;
+
         private CharacterController controller;
         private float verticalVelocity;
         private float pitch;
@@ -29,6 +33,10 @@ namespace Evaverse.Gameplay.Runtime.Avatar
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            if (mountController == null)
+            {
+                mountController = GetComponent<HoverboardMountController>();
+            }
         }
 
         private void Start()
@@ -114,6 +122,16 @@ namespace Evaverse.Gameplay.Runtime.Avatar
 
         private void UpdateMovement()
         {
+            if (mountController != null && mountController.IsMounted)
+            {
+                return;
+            }
+
+            if (controller == null || !controller.enabled)
+            {
+                return;
+            }
+
             float speed = IsSprinting ? sprintSpeed : walkSpeed;
             Vector3 localMove = new Vector3(MoveInput.x, 0f, MoveInput.y);
             Vector3 worldMove = transform.TransformDirection(localMove) * speed;

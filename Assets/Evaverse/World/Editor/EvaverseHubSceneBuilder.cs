@@ -630,12 +630,6 @@ namespace Evaverse.World.Editor
             camera.farClipPlane = 1800f;
             playerCamera.AddComponent<AudioListener>();
 
-            CinemachinePlayerRig playerRig = player.AddComponent<CinemachinePlayerRig>();
-            SerializedObject rigObject = new SerializedObject(playerRig);
-            rigObject.FindProperty("playerCamera").objectReferenceValue = camera;
-            rigObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
-            rigObject.ApplyModifiedPropertiesWithoutUndo();
-
             SerializedObject avatarObject = new SerializedObject(avatarMotor);
             avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
             avatarObject.ApplyModifiedPropertiesWithoutUndo();
@@ -689,7 +683,6 @@ namespace Evaverse.World.Editor
             mountObject.ApplyModifiedPropertiesWithoutUndo();
             HoverboardMountController mountController = player.AddComponent<HoverboardMountController>();
             SerializedObject mountControllerObject = new SerializedObject(mountController);
-            mountControllerObject.FindProperty("avatarMotor").objectReferenceValue = avatarMotor;
             mountControllerObject.FindProperty("avatarController").objectReferenceValue = controller;
             mountControllerObject.FindProperty("hoverboardMotor").objectReferenceValue = boardMotor;
             mountControllerObject.FindProperty("hoverboardMount").objectReferenceValue = boardMount;
@@ -697,6 +690,13 @@ namespace Evaverse.World.Editor
             mountControllerObject.FindProperty("dismountPoint").objectReferenceValue = dismountPoint.transform;
             mountControllerObject.FindProperty("mountDistance").floatValue = 7f;
             mountControllerObject.ApplyModifiedPropertiesWithoutUndo();
+
+            CinemachinePlayerRig playerRig = player.AddComponent<CinemachinePlayerRig>();
+            SerializedObject rigObject = new SerializedObject(playerRig);
+            rigObject.FindProperty("playerCamera").objectReferenceValue = camera;
+            rigObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
+            rigObject.FindProperty("mountController").objectReferenceValue = mountController;
+            rigObject.ApplyModifiedPropertiesWithoutUndo();
 
             GameObject hudObject = new GameObject("Race Prototype HUD");
             hudObject.transform.SetParent(prototype, false);
