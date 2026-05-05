@@ -1,9 +1,6 @@
 using Evaverse.Gameplay.Runtime.Avatar;
 using UnityEngine;
-
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
 namespace Evaverse.Gameplay.Runtime.Hoverboard
 {
@@ -61,11 +58,12 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         private bool WasMountTogglePressed()
         {
-#if ENABLE_INPUT_SYSTEM
-            return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-#else
-            return Input.GetKeyDown(KeyCode.E);
-#endif
+            if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            return Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame;
         }
 
         private void TryMount()

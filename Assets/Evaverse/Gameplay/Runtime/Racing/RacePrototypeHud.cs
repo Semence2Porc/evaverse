@@ -1,9 +1,6 @@
 using Evaverse.Gameplay.Runtime.Hoverboard;
 using UnityEngine;
-
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
 namespace Evaverse.Gameplay.Runtime.Racing
 {
@@ -56,7 +53,7 @@ namespace Evaverse.Gameplay.Runtime.Racing
                 GUILayout.Space(8f);
                 GUILayout.Label("WASD move/ride", labelStyle);
                 GUILayout.Label("Shift sprint/drift  |  Space jump/boost", labelStyle);
-                GUILayout.Label("E mount/dismount near board", labelStyle);
+                GUILayout.Label("E / gamepad X — mount/dismount near board", labelStyle);
                 GUILayout.Label("R reset race timer", labelStyle);
             }
 
@@ -90,11 +87,12 @@ namespace Evaverse.Gameplay.Runtime.Racing
 
         private static bool WasResetPressed()
         {
-#if ENABLE_INPUT_SYSTEM
-            return Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame;
-#else
-            return Input.GetKeyDown(KeyCode.R);
-#endif
+            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            return Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame;
         }
 
         private void RecordFinishIfNeeded()

@@ -1,8 +1,5 @@
 using UnityEngine;
-
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
 namespace Evaverse.Gameplay.Runtime.Hoverboard
 {
@@ -50,7 +47,6 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         private void ReadInput()
         {
-#if ENABLE_INPUT_SYSTEM
             steerInput = Vector2.zero;
             isDrifting = false;
             boostRequested = false;
@@ -66,13 +62,14 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
                 boostRequested = Keyboard.current.spaceKey.wasPressedThisFrame;
             }
 
+            if (Gamepad.current != null)
+            {
+                steerInput += Gamepad.current.leftStick.ReadValue();
+                isDrifting |= Gamepad.current.leftStickButton.isPressed;
+                boostRequested |= Gamepad.current.buttonSouth.wasPressedThisFrame;
+            }
+
             steerInput = Vector2.ClampMagnitude(steerInput, 1f);
-#else
-            steerInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            steerInput = Vector2.ClampMagnitude(steerInput, 1f);
-            isDrifting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            boostRequested = Input.GetKeyDown(KeyCode.Space);
-#endif
         }
 
         private void ApplyHover()

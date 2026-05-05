@@ -1,8 +1,5 @@
 using UnityEngine;
-
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
 namespace Evaverse.Gameplay.Runtime.Avatar
 {
@@ -34,8 +31,26 @@ namespace Evaverse.Gameplay.Runtime.Avatar
             controller = GetComponent<CharacterController>();
         }
 
+        private void Start()
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
         private void Update()
         {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
             ReadInput();
             UpdateLook();
             UpdateMovement();
@@ -43,7 +58,6 @@ namespace Evaverse.Gameplay.Runtime.Avatar
 
         private void ReadInput()
         {
-#if ENABLE_INPUT_SYSTEM
             Vector2 moveInput = Vector2.zero;
             IsSprinting = false;
 
@@ -56,39 +70,44 @@ namespace Evaverse.Gameplay.Runtime.Avatar
                 IsSprinting = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
             }
 
+            if (Gamepad.current != null)
+            {
+                moveInput += Gamepad.current.leftStick.ReadValue();
+                IsSprinting |= Gamepad.current.leftStickButton.isPressed;
+            }
+
             MoveInput = Vector2.ClampMagnitude(moveInput, 1f);
-#else
-            MoveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            MoveInput = Vector2.ClampMagnitude(MoveInput, 1f);
-            IsSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-#endif
         }
 
         private void UpdateLook()
         {
-            float yawDelta = 0f;
-            float pitchDelta = 0f;
+            float yawDegrees = 0f;
+            float pitchDegrees = 0f;
 
-#if ENABLE_INPUT_SYSTEM
-            if (Mouse.current != null)
+            if (Mouse.current != null && Cursor.lockState == CursorLockMode.Locked)
             {
                 Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-                yawDelta = mouseDelta.x;
-                pitchDelta = mouseDelta.y;
+                float scale = mouseSensitivity * Time.deltaTime;
+                yawDegrees += mouseDelta.x * scale;
+                pitchDegrees += mouseDelta.y * scale;
             }
-#else
-            yawDelta = Input.GetAxis("Mouse X") * 10f;
-            pitchDelta = Input.GetAxis("Mouse Y") * 10f;
-#endif
 
-            transform.Rotate(Vector3.up, yawDelta * mouseSensitivity * Time.deltaTime);
+            if (Gamepad.current != null)
+            {
+                Vector2 look = Gamepad.current.rightStick.ReadValue();
+                float stickScale = 110f * Time.deltaTime;
+                yawDegrees += look.x * stickScale;
+                pitchDegrees += look.y * stickScale;
+            }
+
+            transform.Rotate(Vector3.up, yawDegrees);
 
             if (cameraPivot == null)
             {
                 return;
             }
 
-            pitch -= pitchDelta * mouseSensitivity * Time.deltaTime;
+            pitch -= pitchDegrees;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
             cameraPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
@@ -104,16 +123,11 @@ namespace Evaverse.Gameplay.Runtime.Avatar
                 verticalVelocity = -2f;
             }
 
-            bool jumpPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-            if (Keyboard.current != null)
+            bool jumpPressed = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+            if (!jumpPressed && Gamepad.current != null)
             {
-                jumpPressed = Keyboard.current.spaceKey.wasPressedThisFrame;
+                jumpPressed = Gamepad.current.buttonSouth.wasPressedThisFrame;
             }
-#else
-            jumpPressed = Input.GetKeyDown(KeyCode.Space);
-#endif
 
             if (controller.isGrounded && jumpPressed)
             {

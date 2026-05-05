@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Evaverse.Gameplay.Runtime.Avatar;
 using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
+using Evaverse.Gameplay.Runtime.View;
 using Evaverse.World.Runtime.Authoring;
 using Evaverse.World.Runtime.Definitions;
 using UnityEditor;
@@ -592,6 +593,19 @@ namespace Evaverse.World.Editor
             controller.radius = 0.36f;
             controller.center = new Vector3(0f, 1f, 0f);
 
+            GameObject racingProbe = new GameObject("Racing Trigger Probe");
+            racingProbe.transform.SetParent(player.transform, false);
+            racingProbe.transform.localPosition = new Vector3(0f, 1f, 0f);
+            Rigidbody probeBody = racingProbe.AddComponent<Rigidbody>();
+            probeBody.isKinematic = true;
+            probeBody.useGravity = false;
+            CapsuleCollider probeCollider = racingProbe.AddComponent<CapsuleCollider>();
+            probeCollider.isTrigger = true;
+            probeCollider.radius = 0.45f;
+            probeCollider.height = 1.9f;
+            probeCollider.direction = 1;
+            probeCollider.center = Vector3.zero;
+
             AvatarMotor avatarMotor = player.AddComponent<AvatarMotor>();
             RaceLapTracker playerTracker = player.AddComponent<RaceLapTracker>();
 
@@ -609,14 +623,18 @@ namespace Evaverse.World.Editor
 
             GameObject playerCamera = new GameObject("Main Camera");
             playerCamera.tag = "MainCamera";
-            playerCamera.transform.SetParent(pivot.transform, false);
-            playerCamera.transform.localPosition = new Vector3(0f, 0.35f, -7.5f);
-            playerCamera.transform.localRotation = Quaternion.Euler(8f, 0f, 0f);
+            playerCamera.transform.SetParent(player.transform, false);
             Camera camera = playerCamera.AddComponent<Camera>();
             camera.fieldOfView = 58f;
             camera.nearClipPlane = 0.2f;
             camera.farClipPlane = 1800f;
             playerCamera.AddComponent<AudioListener>();
+
+            CinemachinePlayerRig playerRig = player.AddComponent<CinemachinePlayerRig>();
+            SerializedObject rigObject = new SerializedObject(playerRig);
+            rigObject.FindProperty("playerCamera").objectReferenceValue = camera;
+            rigObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
+            rigObject.ApplyModifiedPropertiesWithoutUndo();
 
             SerializedObject avatarObject = new SerializedObject(avatarMotor);
             avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
@@ -642,7 +660,6 @@ namespace Evaverse.World.Editor
             boardMotor.enabled = false;
 
             HoverboardMount boardMount = board.AddComponent<HoverboardMount>();
-            RaceLapTracker boardTracker = board.AddComponent<RaceLapTracker>();
 
             GameObject boardDeck = CreatePrimitive("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), Vector3.zero, new Vector3(2.8f, 0.22f, 6.2f), materials.MetalDark);
             MarkDynamic(boardDeck);
@@ -670,8 +687,6 @@ namespace Evaverse.World.Editor
             SerializedObject mountObject = new SerializedObject(boardMount);
             mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
             mountObject.ApplyModifiedPropertiesWithoutUndo();
-            AssignRaceCourse(boardTracker, course);
-
             HoverboardMountController mountController = player.AddComponent<HoverboardMountController>();
             SerializedObject mountControllerObject = new SerializedObject(mountController);
             mountControllerObject.FindProperty("avatarMotor").objectReferenceValue = avatarMotor;
@@ -687,12 +702,12 @@ namespace Evaverse.World.Editor
             hudObject.transform.SetParent(prototype, false);
             RacePrototypeHud hud = hudObject.AddComponent<RacePrototypeHud>();
             SerializedObject hudObjectSerialized = new SerializedObject(hud);
-            hudObjectSerialized.FindProperty("tracker").objectReferenceValue = boardTracker;
+            hudObjectSerialized.FindProperty("tracker").objectReferenceValue = playerTracker;
             hudObjectSerialized.FindProperty("hoverboard").objectReferenceValue = boardMotor;
             hudObjectSerialized.FindProperty("showControls").boolValue = true;
             hudObjectSerialized.ApplyModifiedPropertiesWithoutUndo();
 
-            CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), "Prototype Controls\nWASD move/ride\nShift sprint/drift\nSpace jump/boost\nE mount/dismount near board", Color.white);
+            CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nEsc — free cursor", Color.white);
         }
 
         private static void AssignRaceCourse(RaceLapTracker tracker, RaceCourseDefinition course)
