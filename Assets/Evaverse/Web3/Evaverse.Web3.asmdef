@@ -1,0 +1,16 @@
+{
+  "name": "Evaverse.Web3",
+  "rootNamespace": "Evaverse.Web3",
+  "references": [
+    "Evaverse.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

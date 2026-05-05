@@ -1,0 +1,173 @@
+{
+  "metadata": {
+    "mapId": "hub-01",
+    "displayName": "Evaverse Hub",
+    "defaultSceneName": "Hub",
+    "width": 1600.0,
+    "length": 1600.0,
+    "recommendedPlayers": 48,
+    "streamingWorld": true,
+    "mapCategory": "Hub"
+  },
+  "spawns": [
+    {
+      "spawnId": "plaza-default",
+      "label": "Central Plaza",
+      "sceneName": "Hub",
+      "position": { "x": 0.0, "y": 1.0, "z": 0.0 },
+      "eulerAngles": { "x": 0.0, "y": 180.0, "z": 0.0 },
+      "preferredForFirstTimePlayers": true,
+      "tags": [ "default", "social", "safe" ]
+    },
+    {
+      "spawnId": "race-gate",
+      "label": "Race Portal",
+      "sceneName": "Hub",
+      "position": { "x": 160.0, "y": 1.0, "z": -120.0 },
+      "eulerAngles": { "x": 0.0, "y": -45.0, "z": 0.0 },
+      "preferredForFirstTimePlayers": false,
+      "tags": [ "activity", "race" ]
+    }
+  ],
+  "biomeZones": [
+    {
+      "zoneId": "snowbound-nexus",
+      "displayName": "Snowbound Nexus",
+      "biome": "Snow",
+      "center": { "x": 0.0, "y": 20.0, "z": 0.0 },
+      "size": { "x": 520.0, "y": 96.0, "z": 520.0 },
+      "accentColor": { "r": 0.2, "g": 0.86, "b": 1.0, "a": 1.0 },
+      "canonStatus": "Confirmed Original",
+      "designIntent": "Snowy neon sci-fi social hub and hoverboard plaza."
+    },
+    {
+      "zoneId": "lava-forge",
+      "displayName": "Lava Forge",
+      "biome": "Lava",
+      "center": { "x": 420.0, "y": 20.0, "z": 0.0 },
+      "size": { "x": 300.0, "y": 96.0, "z": 320.0 },
+      "accentColor": { "r": 1.0, "g": 0.38, "b": 0.04, "a": 1.0 },
+      "canonStatus": "New Evolution",
+      "designIntent": "Arena and combat-prototype district with molten rails."
+    },
+    {
+      "zoneId": "jungle-canopy",
+      "displayName": "Jungle Canopy",
+      "biome": "Jungle",
+      "center": { "x": -320.0, "y": 20.0, "z": 260.0 },
+      "size": { "x": 300.0, "y": 120.0, "z": 300.0 },
+      "accentColor": { "r": 0.17, "g": 0.86, "b": 0.29, "a": 1.0 },
+      "canonStatus": "New Evolution",
+      "designIntent": "Treasure-hunt and pet/turtle exploration district."
+    },
+    {
+      "zoneId": "desert-dunes",
+      "displayName": "Desert Dunes",
+      "biome": "Desert",
+      "center": { "x": -320.0, "y": 20.0, "z": -260.0 },
+      "size": { "x": 300.0, "y": 96.0, "z": 300.0 },
+      "accentColor": { "r": 1.0, "g": 0.73, "b": 0.25, "a": 1.0 },
+      "canonStatus": "New Evolution",
+      "designIntent": "Open hoverboard lines, ruins, and wind-sculpted race routes."
+    },
+    {
+      "zoneId": "cosmic-stadium",
+      "displayName": "Cosmic Stadium",
+      "biome": "Cosmic",
+      "center": { "x": 240.0, "y": 20.0, "z": 320.0 },
+      "size": { "x": 320.0, "y": 120.0, "z": 280.0 },
+      "accentColor": { "r": 0.94, "g": 0.18, "b": 1.0, "a": 1.0 },
+      "canonStatus": "Confirmed Original",
+      "designIntent": "Cosmic Cup and low-gravity event district."
+    }
+  ],
+  "regions": [
+    {
+      "regionId": "central-plaza",
+      "displayName": "Central Plaza",
+      "sceneName": "Hub",
+      "purpose": "Social",
+      "center": { "x": 0.0, "y": 8.0, "z": 0.0 },
+      "size": { "x": 360.0, "y": 24.0, "z": 360.0 },
+      "loadAdditively": false
+    },
+    {
+      "regionId": "creator-bazaar",
+      "displayName": "Creator Bazaar",
+      "sceneName": "Hub",
+      "purpose": "Service",
+      "center": { "x": -220.0, "y": 8.0, "z": 120.0 },
+      "size": { "x": 260.0, "y": 24.0, "z": 220.0 },
+      "loadAdditively": true
+    },
+    {
+      "regionId": "activity-wing",
+      "displayName": "Activity Wing",
+      "sceneName": "Hub",
+      "purpose": "Activity",
+      "center": { "x": 220.0, "y": 8.0, "z": -120.0 },
+      "size": { "x": 300.0, "y": 24.0, "z": 240.0 },
+      "loadAdditively": true
+    }
+  ],
+  "pointsOfInterest": [
+    {
+      "pointId": "poi-main-statue",
+      "displayName": "Founder Statue",
+      "sceneName": "Hub",
+      "pointType": "Landmark",
+      "position": { "x": 0.0, "y": 0.0, "z": 24.0 },
+      "description": "Main meeting landmark in the plaza."
+    },
+    {
+      "pointId": "poi-race-portal",
+      "displayName": "Race Portal",
+      "sceneName": "Hub",
+      "pointType": "Portal",
+      "position": { "x": 160.0, "y": 0.0, "z": -120.0 },
+      "description": "Entry to the first hoverboard race flow."
+    }
+  ],
+  "blockout": [
+    {
+      "id": "plaza-floor",
+      "primitive": "Plane",
+      "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "rotationEuler": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "scale": { "x": 36.0, "y": 1.0, "z": 36.0 },
+      "materialHint": "stone"
+    },
+    {
+      "id": "creator-bazaar-floor",
+      "primitive": "Plane",
+      "position": { "x": -220.0, "y": 0.0, "z": 120.0 },
+      "rotationEuler": { "x": 0.0, "y": 12.0, "z": 0.0 },
+      "scale": { "x": 24.0, "y": 1.0, "z": 20.0 },
+      "materialHint": "market"
+    },
+    {
+      "id": "activity-wing-floor",
+      "primitive": "Plane",
+      "position": { "x": 220.0, "y": 0.0, "z": -120.0 },
+      "rotationEuler": { "x": 0.0, "y": -18.0, "z": 0.0 },
+      "scale": { "x": 28.0, "y": 1.0, "z": 22.0 },
+      "materialHint": "sport"
+    },
+    {
+      "id": "main-statue-base",
+      "primitive": "Cylinder",
+      "position": { "x": 0.0, "y": 2.0, "z": 24.0 },
+      "rotationEuler": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "scale": { "x": 8.0, "y": 2.0, "z": 8.0 },
+      "materialHint": "landmark"
+    },
+    {
+      "id": "race-gate-frame",
+      "primitive": "Cube",
+      "position": { "x": 160.0, "y": 10.0, "z": -120.0 },
+      "rotationEuler": { "x": 0.0, "y": -45.0, "z": 0.0 },
+      "scale": { "x": 24.0, "y": 20.0, "z": 4.0 },
+      "materialHint": "portal"
+    }
+  ]
+}

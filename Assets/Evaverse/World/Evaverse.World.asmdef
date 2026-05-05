@@ -1,0 +1,16 @@
+{
+  "name": "Evaverse.World",
+  "rootNamespace": "Evaverse.World",
+  "references": [
+    "Evaverse.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Evaverse.Networking",
+  "rootNamespace": "Evaverse.Networking",
+  "references": [
+    "Evaverse.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

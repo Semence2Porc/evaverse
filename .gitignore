@@ -1,0 +1,56 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Editor logs: prefer `-logFile logs/editor.log` so dumps land under ./logs/ (ignored).
+# Keeping *.log ignored everywhere avoids stray dumps cluttering commits.
+*.log
+
+# Canonical local-only log mirror (ignored)
+logs/
+
+# Generated Unity files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Addressables / build cache
+ServerData/
+
+# Crash reports
+sysinfo.txt
+
+# Personal notes / AI exports — not part of the game (local only under notes/)
+notes/
+
+# IDE / tooling
+.vs/
+.gradle/
+.idea/
+
+# Exported / local packages (prefer Git LFS or external storage for very large meshes/audio)
+ExportedObj/
+

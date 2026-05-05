@@ -1,0 +1,19 @@
+{
+  "name": "Evaverse.UI",
+  "rootNamespace": "Evaverse.UI",
+  "references": [
+    "Evaverse.Core",
+    "Evaverse.Gameplay",
+    "Evaverse.Meta",
+    "Evaverse.Networking"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
