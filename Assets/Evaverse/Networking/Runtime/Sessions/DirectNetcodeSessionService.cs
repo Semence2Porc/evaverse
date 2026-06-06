@@ -107,5 +107,19 @@ namespace Evaverse.Networking.Runtime.Sessions
             StatusMessage = "Direct Netcode idle.";
             EvaLog.Info("Disconnected direct Netcode session.");
         }
+
+        public void NotifyTransportDisconnected()
+        {
+            if (!IsConnected && bootstrap?.NetworkManager?.IsListening != true)
+            {
+                return;
+            }
+
+            IsHosting = false;
+            IsConnected = false;
+            JoinCode = bootstrap != null ? NetcodeBootstrap.ResolveLocalJoinTarget(bootstrap.DirectPort) : string.Empty;
+            StatusMessage = "Connection lost. Host or join again.";
+            EvaLog.Warn(StatusMessage);
+        }
     }
 }

@@ -195,8 +195,13 @@ namespace Evaverse.UI.Runtime.Session
 
         private static bool HasError(ISessionService sessionService)
         {
-            return !string.IsNullOrWhiteSpace(sessionService.StatusMessage)
-                && sessionService.StatusMessage.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (string.IsNullOrWhiteSpace(sessionService.StatusMessage))
+            {
+                return false;
+            }
+
+            return sessionService.StatusMessage.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0
+                || sessionService.StatusMessage.IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string ResolveSubtitle(ISessionService sessionService)

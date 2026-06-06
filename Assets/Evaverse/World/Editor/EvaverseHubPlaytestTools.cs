@@ -1,7 +1,9 @@
 using System;
 using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
+using Evaverse.Gameplay.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Racing;
 using Evaverse.Networking.Runtime.Sessions;
 using Evaverse.UI.Runtime.Session;
 using Unity.Netcode;
@@ -72,6 +74,9 @@ namespace Evaverse.World.Editor
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<NetcodeBootstrap>(), "NetcodeBootstrap");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<SessionBootstrap>(), "SessionBootstrap");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<EvaverseSessionJoinUi>(), "EvaverseSessionJoinUi");
+                valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<NetworkRaceSessionTracker>(), "NetworkRaceSessionTracker");
+                valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<RaceSessionFinishBoardUi>(), "RaceSessionFinishBoardUi");
+                valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<NetcodeSessionLifecycleBridge>(), "NetcodeSessionLifecycleBridge");
             }
             else
             {

@@ -11,5 +11,6 @@ namespace Evaverse.Networking.Runtime.Sessions
         void StartHost(SessionConfig config);
         void StartClient(string joinCode);
         void Disconnect();
+        void NotifyTransportDisconnected();
     }
 }

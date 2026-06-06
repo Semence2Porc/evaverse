@@ -23,6 +23,8 @@ namespace Evaverse.Gameplay.Runtime.Netcode
         private RacePrototypeHud raceHud;
         private RaceCheckpointGuide checkpointGuide;
         private NetworkRaceProgressLabel raceProgressLabel;
+        private NetworkPlayerDisplayName displayName;
+        private RaceFinishReporter finishReporter;
         private NetworkPlayerMountSync mountSync;
         private RaceLapTrackerNetworkSync raceSync;
         private CinemachinePlayerRig cinemachineRig;
@@ -55,6 +57,8 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             raceHud = GetComponent<RacePrototypeHud>();
             checkpointGuide = GetComponent<RaceCheckpointGuide>();
             raceProgressLabel = GetComponent<NetworkRaceProgressLabel>();
+            displayName = GetComponent<NetworkPlayerDisplayName>();
+            finishReporter = GetComponent<RaceFinishReporter>();
             mountSync = GetComponent<NetworkPlayerMountSync>();
             raceSync = GetComponent<RaceLapTrackerNetworkSync>();
             cinemachineRig = GetComponent<CinemachinePlayerRig>();
@@ -164,6 +168,17 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (raceSync != null)
             {
                 raceSync.Configure(lapTracker);
+            }
+
+            if (displayName != null)
+            {
+                TextMesh nameLabel = transform.Find("Player Name Label")?.GetComponent<TextMesh>();
+                displayName.Configure(nameLabel);
+            }
+
+            if (finishReporter != null)
+            {
+                finishReporter.Configure(lapTracker, displayName);
             }
         }
     }

@@ -3,6 +3,7 @@
   "rootNamespace": "Evaverse.Gameplay",
   "references": [
     "Evaverse.Core",
+    "Evaverse.Meta",
     "Evaverse.World",
     "Unity.Cinemachine",
     "Unity.InputSystem",

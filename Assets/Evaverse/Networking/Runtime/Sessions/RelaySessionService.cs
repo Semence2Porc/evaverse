@@ -111,6 +111,22 @@ namespace Evaverse.Networking.Runtime.Sessions
             EvaLog.Info("Disconnected Relay session.");
         }
 
+        public void NotifyTransportDisconnected()
+        {
+            if (!IsConnected && bootstrap?.NetworkManager?.IsListening != true)
+            {
+                return;
+            }
+
+            activeSession = null;
+            IsHosting = false;
+            IsConnected = false;
+            IsBusy = false;
+            JoinCode = string.Empty;
+            StatusMessage = "Connection lost. Host or join again.";
+            EvaLog.Warn(StatusMessage);
+        }
+
         private System.Collections.IEnumerator RunHost(SessionConfig config)
         {
             Task<bool> task = StartRelayHostAsync(config);

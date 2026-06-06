@@ -52,5 +52,9 @@ namespace Evaverse.Networking.Runtime.Sessions
             StatusMessage = "Local session idle.";
             EvaLog.Info("Disconnected local session.");
         }
+
+        public void NotifyTransportDisconnected()
+        {
+        }
     }
 }

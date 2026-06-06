@@ -7,6 +7,9 @@ using Evaverse.Gameplay.Runtime.View;
 using Evaverse.Networking.Editor;
 using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
+using Evaverse.Gameplay.Runtime.Netcode;
+using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Racing;
 using Evaverse.UI.Runtime.Session;
 using Evaverse.World.Runtime.Authoring;
 using Evaverse.World.Runtime.Definitions;
@@ -164,6 +167,11 @@ namespace Evaverse.World.Editor
                 : (int)SessionBackend.DirectNetcode;
             sessionBootstrapObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
             sessionBootstrapObject.ApplyModifiedPropertiesWithoutUndo();
+
+            networkingRoot.AddComponent<NetworkObject>();
+            networkingRoot.AddComponent<NetworkRaceSessionTracker>();
+            networkingRoot.AddComponent<NetcodeSessionLifecycleBridge>();
+            networkingRoot.AddComponent<RaceSessionFinishBoardUi>();
 
             EvaverseSessionJoinUi joinUi = networkingRoot.AddComponent<EvaverseSessionJoinUi>();
             SerializedObject joinUiObject = new SerializedObject(joinUi);
