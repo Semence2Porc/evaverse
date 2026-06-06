@@ -1,3 +1,4 @@
+using System;
 using Evaverse.Core.Runtime.App;
 using Evaverse.Networking.Runtime.Sessions;
 using Unity.Netcode;
@@ -11,13 +12,17 @@ namespace Evaverse.UI.Runtime.Session
         [SerializeField] private bool showDebugDetails;
 
         private string joinInput = string.Empty;
+        private string copyFeedback = string.Empty;
+        private float copyFeedbackUntil;
         private GUIStyle panelStyle;
         private GUIStyle titleStyle;
         private GUIStyle subtitleStyle;
         private GUIStyle labelStyle;
+        private GUIStyle errorStyle;
         private GUIStyle joinCodeStyle;
         private GUIStyle buttonStyle;
         private GUIStyle textFieldStyle;
+        private GUIStyle feedbackStyle;
 
         private void Start()
         {
@@ -44,7 +49,8 @@ namespace Evaverse.UI.Runtime.Session
             EnsureStyles();
 
             bool connected = sessionService.IsConnected;
-            float panelHeight = connected ? 210f : 230f;
+            bool busy = sessionService.IsBusy;
+            float panelHeight = connected ? 236f : 250f;
             if (showDebugDetails)
             {
                 panelHeight += 56f;
@@ -59,7 +65,11 @@ namespace Evaverse.UI.Runtime.Session
             GUILayout.Label(ResolveSubtitle(sessionService), subtitleStyle);
             GUILayout.Space(8f);
 
-            if (connected)
+            if (busy)
+            {
+                DrawBusyState(sessionService);
+            }
+            else if (connected)
             {
                 DrawConnectedState(sessionService);
             }
@@ -67,6 +77,8 @@ namespace Evaverse.UI.Runtime.Session
             {
                 DrawDisconnectedState(sessionService);
             }
+
+            DrawCopyFeedback();
 
             if (showDebugDetails)
             {
@@ -77,9 +89,16 @@ namespace Evaverse.UI.Runtime.Session
             GUILayout.EndArea();
         }
 
+        private void DrawBusyState(ISessionService sessionService)
+        {
+            GUILayout.Label(sessionService.StatusMessage, labelStyle);
+            GUILayout.Space(8f);
+            GUILayout.Label("Connecting...", labelStyle);
+        }
+
         private void DrawDisconnectedState(ISessionService sessionService)
         {
-            GUILayout.Label("Host a session or join with a code.", labelStyle);
+            GUILayout.Label(ResolveStatusLine(sessionService), HasError(sessionService) ? errorStyle : labelStyle);
             GUILayout.Space(6f);
 
             GUILayout.Label("Join code / address", labelStyle);
@@ -87,6 +106,7 @@ namespace Evaverse.UI.Runtime.Session
             GUILayout.Space(8f);
 
             GUILayout.BeginHorizontal();
+            GUI.enabled = !sessionService.IsBusy;
             if (GUILayout.Button("Host", buttonStyle, GUILayout.Height(34f)))
             {
                 sessionService.StartHost(ResolveConfig());
@@ -101,21 +121,27 @@ namespace Evaverse.UI.Runtime.Session
                 sessionService.StartClient(joinInput);
             }
 
+            GUI.enabled = true;
             GUILayout.EndHorizontal();
         }
 
         private void DrawConnectedState(ISessionService sessionService)
         {
-            string status = string.IsNullOrWhiteSpace(sessionService.StatusMessage)
-                ? "Connected"
-                : sessionService.StatusMessage;
-            GUILayout.Label(status, labelStyle);
+            GUILayout.Label(ResolveStatusLine(sessionService), labelStyle);
 
             if (!string.IsNullOrWhiteSpace(sessionService.JoinCode))
             {
                 GUILayout.Space(6f);
                 GUILayout.Label("Share this code", labelStyle);
                 GUILayout.Label(sessionService.JoinCode, joinCodeStyle);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Copy code", buttonStyle, GUILayout.Height(28f)))
+                {
+                    CopyJoinCode(sessionService.JoinCode);
+                }
+
+                GUILayout.EndHorizontal();
             }
 
             int playerCount = NetworkManager.Singleton != null
@@ -137,6 +163,40 @@ namespace Evaverse.UI.Runtime.Session
                     joinInput = string.Empty;
                 }
             }
+        }
+
+        private void DrawCopyFeedback()
+        {
+            if (string.IsNullOrEmpty(copyFeedback) || Time.unscaledTime > copyFeedbackUntil)
+            {
+                return;
+            }
+
+            GUILayout.Space(4f);
+            GUILayout.Label(copyFeedback, feedbackStyle);
+        }
+
+        private void CopyJoinCode(string joinCode)
+        {
+            GUIUtility.systemCopyBuffer = joinCode;
+            copyFeedback = "Join code copied.";
+            copyFeedbackUntil = Time.unscaledTime + 2f;
+        }
+
+        private static string ResolveStatusLine(ISessionService sessionService)
+        {
+            if (!string.IsNullOrWhiteSpace(sessionService.StatusMessage))
+            {
+                return sessionService.StatusMessage;
+            }
+
+            return sessionService.IsConnected ? "Connected" : "Host a session or join with a code.";
+        }
+
+        private static bool HasError(ISessionService sessionService)
+        {
+            return !string.IsNullOrWhiteSpace(sessionService.StatusMessage)
+                && sessionService.StatusMessage.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string ResolveSubtitle(ISessionService sessionService)
@@ -205,6 +265,13 @@ namespace Evaverse.UI.Runtime.Session
                 wordWrap = true
             };
 
+            errorStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(1f, 0.45f, 0.4f) },
+                wordWrap = true
+            };
+
             joinCodeStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 22,
@@ -223,6 +290,13 @@ namespace Evaverse.UI.Runtime.Session
             {
                 fontSize = 14,
                 alignment = TextAnchor.MiddleLeft
+            };
+
+            feedbackStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Italic,
+                normal = { textColor = new Color(0.55f, 1f, 0.72f) }
             };
         }
     }

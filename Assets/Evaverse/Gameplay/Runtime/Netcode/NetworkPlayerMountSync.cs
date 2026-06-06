@@ -25,14 +25,18 @@ namespace Evaverse.Gameplay.Runtime.Netcode
         [SerializeField] private Vector3 parkedOffset = new(2.5f, 0f, -1.2f);
 
         private HoverboardMountController mountController;
+        private HoverboardMount boardMount;
         private HoverboardMotor boardMotor;
         private Transform boardRoot;
+        private Transform riderTransform;
 
-        public void Configure(HoverboardMountController controller, HoverboardMotor motor)
+        public void Configure(HoverboardMountController controller, HoverboardMotor motor, Transform rider)
         {
             mountController = controller;
             boardMotor = motor;
             boardRoot = motor != null ? motor.transform : null;
+            boardMount = motor != null ? motor.GetComponent<HoverboardMount>() : null;
+            riderTransform = rider;
         }
 
         public override void OnNetworkSpawn()
@@ -101,6 +105,22 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             }
 
             ApplyBoardPose(boardPosition.Value, boardYaw.Value);
+        }
+
+        private void LateUpdate()
+        {
+            if (IsOwner || riderTransform == null || boardMount == null || !mounted.Value)
+            {
+                return;
+            }
+
+            Transform socket = boardMount.RiderSocket;
+            if (socket == null)
+            {
+                return;
+            }
+
+            riderTransform.SetPositionAndRotation(socket.position, socket.rotation);
         }
 
         private void ParkBoardNearPlayer()

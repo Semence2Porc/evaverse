@@ -8,6 +8,7 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
         [SerializeField] private GameObject riderRoot;
 
         public bool IsMounted { get; private set; }
+        public Transform RiderSocket => riderSocket;
 
         public void Mount(Transform rider)
         {

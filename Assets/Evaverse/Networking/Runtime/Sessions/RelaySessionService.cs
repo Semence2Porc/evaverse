@@ -24,6 +24,7 @@ namespace Evaverse.Networking.Runtime.Sessions
         public SessionBackend Backend => SessionBackend.MultiplayerRelay;
         public bool IsHosting { get; private set; }
         public bool IsConnected { get; private set; }
+        public bool IsBusy { get; private set; }
         public string JoinCode { get; private set; } = string.Empty;
         public string StatusMessage { get; private set; } = "Relay idle.";
 
@@ -64,6 +65,7 @@ namespace Evaverse.Networking.Runtime.Sessions
                 Disconnect();
             }
 
+            IsBusy = true;
             StatusMessage = "Starting Relay host...";
             coroutineHost.StartCoroutine(RunHost(config));
         }
@@ -87,6 +89,7 @@ namespace Evaverse.Networking.Runtime.Sessions
                 Disconnect();
             }
 
+            IsBusy = true;
             StatusMessage = "Joining Relay session...";
             coroutineHost.StartCoroutine(RunJoin(joinCode));
         }
@@ -102,6 +105,7 @@ namespace Evaverse.Networking.Runtime.Sessions
             bootstrap?.ShutdownNetwork();
             IsHosting = false;
             IsConnected = false;
+            IsBusy = false;
             JoinCode = string.Empty;
             StatusMessage = "Relay idle.";
             EvaLog.Info("Disconnected Relay session.");
@@ -111,6 +115,7 @@ namespace Evaverse.Networking.Runtime.Sessions
         {
             Task<bool> task = StartRelayHostAsync(config);
             yield return WaitForTask(task);
+            IsBusy = false;
 
             if (task.Status != TaskStatus.RanToCompletion || !task.Result)
             {
@@ -125,6 +130,7 @@ namespace Evaverse.Networking.Runtime.Sessions
         {
             Task<bool> task = JoinRelayAsync(joinCode);
             yield return WaitForTask(task);
+            IsBusy = false;
 
             if (task.Status != TaskStatus.RanToCompletion || !task.Result)
             {

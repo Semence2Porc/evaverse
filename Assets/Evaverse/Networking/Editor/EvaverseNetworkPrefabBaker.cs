@@ -83,6 +83,7 @@ namespace Evaverse.Networking.Editor
             root.AddComponent<CinemachinePlayerRig>();
             root.AddComponent<RacePrototypeHud>();
             root.AddComponent<RaceCheckpointGuide>();
+            root.AddComponent<NetworkRaceProgressLabel>();
 
             CreateVisual("avatar-capsule-visual", PrimitiveType.Capsule, root.transform, new Vector3(0f, 1f, 0f), new Vector3(0.72f, 1f, 0.72f), cyan);
             CreateVisual("avatar-visor", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.45f, 0.33f), new Vector3(0.5f, 0.12f, 0.08f), orange);
@@ -90,6 +91,7 @@ namespace Evaverse.Networking.Editor
 
             CreatePersonalHoverboard(root.transform, metal, orange);
             CreateCheckpointArrow(root.transform, orange);
+            CreateRaceProgressLabel(root.transform);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
@@ -100,6 +102,22 @@ namespace Evaverse.Networking.Editor
 
             Debug.Log($"Network player prefab baked at {PrefabPath}.");
             return prefab;
+        }
+
+        private static void CreateRaceProgressLabel(Transform parent)
+        {
+            GameObject labelObject = new GameObject("Race Progress Label");
+            labelObject.transform.SetParent(parent, false);
+            labelObject.transform.localPosition = new Vector3(0f, 2.85f, 0f);
+            labelObject.SetActive(false);
+
+            TextMesh textMesh = labelObject.AddComponent<TextMesh>();
+            textMesh.text = string.Empty;
+            textMesh.anchor = TextAnchor.MiddleCenter;
+            textMesh.alignment = TextAlignment.Center;
+            textMesh.characterSize = 0.12f;
+            textMesh.fontSize = 48;
+            textMesh.color = new Color(0.2f, 0.92f, 1f);
         }
 
         private static void CreateCheckpointArrow(Transform parent, Material material)

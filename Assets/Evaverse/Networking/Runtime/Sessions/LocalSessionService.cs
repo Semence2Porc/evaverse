@@ -7,6 +7,7 @@ namespace Evaverse.Networking.Runtime.Sessions
         public SessionBackend Backend => SessionBackend.Local;
         public bool IsHosting { get; private set; }
         public bool IsConnected { get; private set; }
+        public bool IsBusy => false;
         public string JoinCode { get; private set; } = string.Empty;
         public string StatusMessage { get; private set; } = "Local session idle.";
 
