@@ -21,6 +21,7 @@ namespace Evaverse.Gameplay.Runtime.Netcode
         private HoverboardMotor boardMotor;
         private RaceLapTracker lapTracker;
         private RacePrototypeHud raceHud;
+        private RaceCheckpointGuide checkpointGuide;
         private NetworkPlayerMountSync mountSync;
         private RaceLapTrackerNetworkSync raceSync;
         private CinemachinePlayerRig cinemachineRig;
@@ -51,6 +52,7 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             mountController = GetComponent<HoverboardMountController>();
             lapTracker = GetComponent<RaceLapTracker>();
             raceHud = GetComponent<RacePrototypeHud>();
+            checkpointGuide = GetComponent<RaceCheckpointGuide>();
             mountSync = GetComponent<NetworkPlayerMountSync>();
             raceSync = GetComponent<RaceLapTrackerNetworkSync>();
             cinemachineRig = GetComponent<CinemachinePlayerRig>();
@@ -138,6 +140,12 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (raceHud != null)
             {
                 raceHud.Configure(lapTracker, boardMotor);
+            }
+
+            if (checkpointGuide != null)
+            {
+                Transform arrow = transform.Find("Checkpoint Arrow");
+                checkpointGuide.Configure(lapTracker, arrow);
             }
 
             if (mountSync != null)

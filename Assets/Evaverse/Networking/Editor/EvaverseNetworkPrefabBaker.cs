@@ -82,12 +82,14 @@ namespace Evaverse.Networking.Editor
 
             root.AddComponent<CinemachinePlayerRig>();
             root.AddComponent<RacePrototypeHud>();
+            root.AddComponent<RaceCheckpointGuide>();
 
             CreateVisual("avatar-capsule-visual", PrimitiveType.Capsule, root.transform, new Vector3(0f, 1f, 0f), new Vector3(0.72f, 1f, 0.72f), cyan);
             CreateVisual("avatar-visor", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.45f, 0.33f), new Vector3(0.5f, 0.12f, 0.08f), orange);
             CreateVisual("avatar-backpack", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.2f, -0.28f), new Vector3(0.42f, 0.5f, 0.18f), metal);
 
             CreatePersonalHoverboard(root.transform, metal, orange);
+            CreateCheckpointArrow(root.transform, orange);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
@@ -98,6 +100,29 @@ namespace Evaverse.Networking.Editor
 
             Debug.Log($"Network player prefab baked at {PrefabPath}.");
             return prefab;
+        }
+
+        private static void CreateCheckpointArrow(Transform parent, Material material)
+        {
+            GameObject arrow = new GameObject("Checkpoint Arrow");
+            arrow.transform.SetParent(parent, false);
+            arrow.transform.localPosition = new Vector3(0f, 2.6f, 0f);
+            arrow.SetActive(false);
+
+            GameObject mesh = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            mesh.name = "checkpoint-arrow-mesh";
+            mesh.transform.SetParent(arrow.transform, false);
+            mesh.transform.localPosition = Vector3.zero;
+            mesh.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
+            if (mesh.TryGetComponent(out Collider collider))
+            {
+                Object.DestroyImmediate(collider);
+            }
+
+            if (material != null && mesh.TryGetComponent(out Renderer renderer))
+            {
+                renderer.sharedMaterial = material;
+            }
         }
 
         private static void CreatePersonalHoverboard(Transform parent, Material deckMaterial, Material trimMaterial)

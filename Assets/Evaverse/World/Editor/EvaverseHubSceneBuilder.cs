@@ -7,7 +7,7 @@ using Evaverse.Gameplay.Runtime.View;
 using Evaverse.Networking.Editor;
 using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
-using Evaverse.UI.Runtime.Debug;
+using Evaverse.UI.Runtime.Session;
 using Evaverse.World.Runtime.Authoring;
 using Evaverse.World.Runtime.Definitions;
 using Unity.Netcode;
@@ -165,10 +165,11 @@ namespace Evaverse.World.Editor
             sessionBootstrapObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
             sessionBootstrapObject.ApplyModifiedPropertiesWithoutUndo();
 
-            EvaverseSessionDebugHud debugHud = networkingRoot.AddComponent<EvaverseSessionDebugHud>();
-            SerializedObject hudObject = new SerializedObject(debugHud);
-            hudObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
-            hudObject.ApplyModifiedPropertiesWithoutUndo();
+            EvaverseSessionJoinUi joinUi = networkingRoot.AddComponent<EvaverseSessionJoinUi>();
+            SerializedObject joinUiObject = new SerializedObject(joinUi);
+            joinUiObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
+            joinUiObject.FindProperty("showDebugDetails").boolValue = false;
+            joinUiObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void EnsureSceneInBuildSettings()
@@ -742,6 +743,20 @@ namespace Evaverse.World.Editor
                 avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
                 avatarObject.ApplyModifiedPropertiesWithoutUndo();
                 AssignRaceCourse(playerTracker, course);
+
+                GameObject arrowRoot = new GameObject("Checkpoint Arrow");
+                arrowRoot.transform.SetParent(player.transform, false);
+                arrowRoot.transform.localPosition = new Vector3(0f, 2.6f, 0f);
+                arrowRoot.SetActive(false);
+                GameObject arrowMesh = CreatePrimitive("checkpoint-arrow-mesh", PrimitiveType.Cylinder, arrowRoot.transform, Vector3.zero, Vector3.zero, new Vector3(0.5f, 0.9f, 0.5f), materials.NeonOrange);
+                MarkDynamic(arrowMesh);
+                RemoveCollider(arrowMesh);
+
+                RaceCheckpointGuide checkpointGuide = player.AddComponent<RaceCheckpointGuide>();
+                SerializedObject guideObject = new SerializedObject(checkpointGuide);
+                guideObject.FindProperty("tracker").objectReferenceValue = playerTracker;
+                guideObject.FindProperty("arrowRoot").objectReferenceValue = arrowRoot.transform;
+                guideObject.ApplyModifiedPropertiesWithoutUndo();
             }
 
             if (includeLocalPlayer)
