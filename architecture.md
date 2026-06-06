@@ -61,8 +61,10 @@ The hub should feel like one huge destination with distinct districts, not a men
 
 ### Current implementation notes (prototype)
 
-- Session bootstrapping supports `MultiplayerRelay` using the Multiplayer Services SDK session API (`WithRelayNetwork()`), generating a join code that peers can use to join.
-- Unity Services initialization + anonymous sign-in is handled by a lightweight bootstrap component so sessions can be created/joined reliably.
+- Session bootstrapping supports `DirectNetcode` and `MultiplayerRelay` via `SessionBootstrap` + `EvaverseSessionJoinUi` (host/join code flow).
+- Player display names persist in `PlayerProfileStore` and replicate through `NetworkPlayerDisplayName`.
+- Race start uses a server-authoritative synchronized countdown on `NetworkRaceSessionTracker` when Netcode is active.
+- Hub polish includes minimap (`HubMinimapHud`), district portal prompts (`HubDistrictPortal`), ambient audio (`HubAmbientAudio`), and meta HUD (`PlayerMetaHud` tickets/level).
 
 ## Browser Constraint Notes
 

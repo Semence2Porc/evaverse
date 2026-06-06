@@ -8,10 +8,12 @@ using Evaverse.Networking.Editor;
 using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
 using Evaverse.Gameplay.Runtime.Netcode;
-using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Hub;
+using Evaverse.UI.Runtime.Meta;
 using Evaverse.UI.Runtime.Racing;
 using Evaverse.UI.Runtime.Session;
 using Evaverse.World.Runtime.Authoring;
+using Evaverse.World.Runtime.Hub;
 using Evaverse.World.Runtime.Definitions;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -131,6 +133,8 @@ namespace Evaverse.World.Editor
             }
 
             BuildOverviewCamera();
+            BuildHubUiStack(root.transform, mapDefinition);
+            BuildAmbientAudio(root.transform);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -525,6 +529,44 @@ namespace Evaverse.World.Editor
             CreatePrimitive($"{name}-right-rail", PrimitiveType.Cube, district, new Vector3(26f, 2f, -14f), new Vector3(0f, 0f, 0f), new Vector3(3f, 4f, 62f), accent);
 
             CreateWorldLabel($"{name}-label", district, new Vector3(0f, 28f, 16f), $"{name}\n{canonStatus}\n{hook}", accent.color);
+            CreateDistrictPortalTrigger(district, name, hook);
+        }
+
+        private static void CreateDistrictPortalTrigger(Transform district, string districtName, string hook)
+        {
+            GameObject triggerObject = new GameObject($"{districtName}-portal-trigger");
+            triggerObject.transform.SetParent(district, false);
+            triggerObject.transform.localPosition = new Vector3(0f, 6f, 18f);
+
+            BoxCollider triggerCollider = triggerObject.AddComponent<BoxCollider>();
+            triggerCollider.isTrigger = true;
+            triggerCollider.size = new Vector3(28f, 14f, 8f);
+
+            HubDistrictPortal portal = triggerObject.AddComponent<HubDistrictPortal>();
+            SerializedObject portalObject = new SerializedObject(portal);
+            portalObject.FindProperty("districtName").stringValue = districtName;
+            portalObject.FindProperty("promptText").stringValue = $"{districtName} portal — {hook}";
+            portalObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void BuildHubUiStack(Transform parent, WorldMapDefinition mapDefinition)
+        {
+            GameObject uiRoot = new GameObject("_EvaverseHubUi");
+            uiRoot.transform.SetParent(parent, false);
+            uiRoot.AddComponent<PlayerMetaHud>();
+            uiRoot.AddComponent<HubPortalPromptUi>();
+
+            HubMinimapHud minimap = uiRoot.AddComponent<HubMinimapHud>();
+            SerializedObject minimapObject = new SerializedObject(minimap);
+            minimapObject.FindProperty("mapDefinition").objectReferenceValue = mapDefinition;
+            minimapObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void BuildAmbientAudio(Transform parent)
+        {
+            GameObject ambient = new GameObject("Hub Ambient Audio");
+            ambient.transform.SetParent(parent, false);
+            ambient.AddComponent<HubAmbientAudio>();
         }
 
         private static void BuildLavaDressing(Transform parent, MaterialLibrary materials)

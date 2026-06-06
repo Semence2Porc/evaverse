@@ -4,13 +4,6 @@ using UnityEngine;
 
 namespace Evaverse.Networking.Runtime.Sessions
 {
-    public enum SessionBackend
-    {
-        Local,
-        Netcode,
-        MultiplayerRelay
-    }
-
     /// <summary>
     /// Registers a session implementation with <see cref="ServiceRegistry"/> at runtime.
     /// </summary>
@@ -34,11 +27,6 @@ namespace Evaverse.Networking.Runtime.Sessions
             sessionService = EvaverseSessionServiceFactory.Create(backend, bootstrap, this);
             sessionService.As<IInitializableService>()?.Initialize();
             ServiceRegistry.Register(sessionService);
-
-            if (TryGetComponent(out EvaverseSessionDebugHud hud))
-            {
-                hud.enabled = backend != SessionBackend.Local && registerDebugNetcodeHud;
-            }
         }
 
         private void OnDestroy()

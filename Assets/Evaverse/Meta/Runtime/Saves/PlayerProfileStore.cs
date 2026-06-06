@@ -25,6 +25,18 @@ namespace Evaverse.Meta.Runtime.Saves
             return JsonUtility.FromJson<PlayerProgressionState>(json) ?? new PlayerProgressionState();
         }
 
+        public static string LoadDisplayName()
+        {
+            return Load().DisplayName;
+        }
+
+        public static void SaveDisplayName(string displayName)
+        {
+            PlayerProgressionState state = Load();
+            state.SetDisplayName(displayName);
+            Save(state);
+        }
+
         public static void Save(PlayerProgressionState state)
         {
             string path = GetProfilePath();

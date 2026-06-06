@@ -6,6 +6,7 @@
     "Evaverse.Gameplay",
     "Evaverse.Meta",
     "Evaverse.Networking",
+    "Evaverse.World",
     "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [],

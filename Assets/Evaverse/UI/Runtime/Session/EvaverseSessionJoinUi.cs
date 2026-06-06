@@ -1,5 +1,7 @@
 using System;
 using Evaverse.Core.Runtime.App;
+using Evaverse.Meta.Runtime.Progression;
+using Evaverse.Meta.Runtime.Saves;
 using Evaverse.Networking.Runtime.Sessions;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,6 +14,7 @@ namespace Evaverse.UI.Runtime.Session
         [SerializeField] private bool showDebugDetails;
 
         private string joinInput = string.Empty;
+        private string displayNameInput = "Racer";
         private string copyFeedback = string.Empty;
         private float copyFeedbackUntil;
         private GUIStyle panelStyle;
@@ -26,6 +29,8 @@ namespace Evaverse.UI.Runtime.Session
 
         private void Start()
         {
+            displayNameInput = PlayerProfileStore.LoadDisplayName();
+
             if (!ServiceRegistry.TryResolve<ISessionService>(out var sessionService))
             {
                 return;
@@ -50,7 +55,7 @@ namespace Evaverse.UI.Runtime.Session
 
             bool connected = sessionService.IsConnected;
             bool busy = sessionService.IsBusy;
-            float panelHeight = connected ? 236f : 250f;
+            float panelHeight = connected ? 252f : 296f;
             if (showDebugDetails)
             {
                 panelHeight += 56f;
@@ -101,6 +106,10 @@ namespace Evaverse.UI.Runtime.Session
             GUILayout.Label(ResolveStatusLine(sessionService), HasError(sessionService) ? errorStyle : labelStyle);
             GUILayout.Space(6f);
 
+            GUILayout.Label("Display name", labelStyle);
+            displayNameInput = GUILayout.TextField(displayNameInput, textFieldStyle, GUILayout.Height(28f));
+            GUILayout.Space(6f);
+
             GUILayout.Label("Join code / address", labelStyle);
             joinInput = GUILayout.TextField(joinInput, textFieldStyle, GUILayout.Height(30f));
             GUILayout.Space(8f);
@@ -109,6 +118,7 @@ namespace Evaverse.UI.Runtime.Session
             GUI.enabled = !sessionService.IsBusy;
             if (GUILayout.Button("Host", buttonStyle, GUILayout.Height(34f)))
             {
+                PersistDisplayName();
                 sessionService.StartHost(ResolveConfig());
                 if (!string.IsNullOrWhiteSpace(sessionService.JoinCode))
                 {
@@ -118,6 +128,7 @@ namespace Evaverse.UI.Runtime.Session
 
             if (GUILayout.Button("Join", buttonStyle, GUILayout.Height(34f)))
             {
+                PersistDisplayName();
                 sessionService.StartClient(joinInput);
             }
 
@@ -221,6 +232,12 @@ namespace Evaverse.UI.Runtime.Session
                 : "offline";
 
             return $"Debug · {sessionService.Backend} · hosting={sessionService.IsHosting} · netcode={listening}";
+        }
+
+        private void PersistDisplayName()
+        {
+            PlayerProfileStore.SaveDisplayName(PlayerProgressionState.SanitizeDisplayName(displayNameInput));
+            displayNameInput = PlayerProfileStore.LoadDisplayName();
         }
 
         private SessionConfig ResolveConfig()

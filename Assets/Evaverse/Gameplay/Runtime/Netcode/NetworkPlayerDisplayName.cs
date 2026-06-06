@@ -1,3 +1,4 @@
+using Evaverse.Meta.Runtime.Saves;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -28,7 +29,7 @@ namespace Evaverse.Gameplay.Runtime.Netcode
         {
             if (IsOwner)
             {
-                displayName.Value = new FixedString32Bytes($"Racer {OwnerClientId}");
+                displayName.Value = new FixedString32Bytes(PlayerProfileStore.LoadDisplayName());
             }
 
             displayName.OnValueChanged += HandleNameChanged;

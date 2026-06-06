@@ -1,3 +1,5 @@
+using Evaverse.Gameplay.Runtime.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Evaverse.Gameplay.Runtime.Racing
@@ -52,6 +54,11 @@ namespace Evaverse.Gameplay.Runtime.Racing
 
         private void Update()
         {
+            if (TryApplySynchronizedCountdown())
+            {
+                return;
+            }
+
             if (!CountdownActive)
             {
                 return;
@@ -62,6 +69,45 @@ namespace Evaverse.Gameplay.Runtime.Racing
             {
                 BeginRun();
             }
+        }
+
+        private bool TryApplySynchronizedCountdown()
+        {
+            NetworkRaceSessionTracker sessionTracker = NetworkRaceSessionTracker.Instance;
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (sessionTracker == null || networkManager == null || !networkManager.IsListening)
+            {
+                return false;
+            }
+
+            if (!sessionTracker.TryGetSynchronizedCountdownRemaining(out float remaining))
+            {
+                return false;
+            }
+
+            if (remaining > 0.05f)
+            {
+                if (course != null && course.CheckpointCount > 0
+                    && State != RaceRunState.Running
+                    && State != RaceRunState.Finished)
+                {
+                    CurrentLap = 1;
+                    NextCheckpointIndex = 0;
+                    finishedSeconds = 0f;
+                    CountdownRemaining = remaining;
+                    State = RaceRunState.Countdown;
+                }
+
+                return true;
+            }
+
+            if (State == RaceRunState.Countdown)
+            {
+                BeginRun();
+                return true;
+            }
+
+            return false;
         }
 
         public bool StartCountdown(float durationSeconds)
@@ -87,12 +133,6 @@ namespace Evaverse.Gameplay.Runtime.Racing
             CountdownRemaining = 0f;
             startedAtSeconds = 0f;
             finishedSeconds = 0f;
-        }
-
-        public void SetCourse(RaceCourseDefinition courseDefinition)
-        {
-            course = courseDefinition;
-            ResetProgress();
         }
 
         public bool TryPassCheckpoint(RaceCheckpoint checkpoint)

@@ -1,3 +1,5 @@
+using Evaverse.Gameplay.Runtime.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Evaverse.Gameplay.Runtime.Racing
@@ -21,7 +23,25 @@ namespace Evaverse.Gameplay.Runtime.Racing
                 return;
             }
 
+            if (TryStartSynchronizedCountdown())
+            {
+                return;
+            }
+
             tracker.StartCountdown(countdownSeconds);
+        }
+
+        private bool TryStartSynchronizedCountdown()
+        {
+            NetworkRaceSessionTracker sessionTracker = NetworkRaceSessionTracker.Instance;
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (sessionTracker == null || networkManager == null || !networkManager.IsListening)
+            {
+                return false;
+            }
+
+            sessionTracker.RequestSynchronizedCountdown(countdownSeconds);
+            return true;
         }
 
         private void OnDrawGizmos()
