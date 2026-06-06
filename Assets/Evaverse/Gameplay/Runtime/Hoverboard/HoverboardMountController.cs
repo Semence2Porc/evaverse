@@ -13,6 +13,7 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
         [SerializeField] private float mountDistance = 4f;
 
         public bool IsMounted => hoverboardMount != null && hoverboardMount.IsMounted;
+        public bool InputEnabled { get; set; } = true;
 
         private void Awake()
         {
@@ -32,9 +33,23 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
             }
         }
 
+        public void Configure(
+            Transform riderTransform,
+            CharacterController controller,
+            HoverboardMotor motor,
+            HoverboardMount mount,
+            Transform dismount)
+        {
+            rider = riderTransform;
+            avatarController = controller;
+            hoverboardMotor = motor;
+            hoverboardMount = mount;
+            dismountPoint = dismount;
+        }
+
         private void Update()
         {
-            if (!WasMountTogglePressed())
+            if (!InputEnabled || !WasMountTogglePressed())
             {
                 return;
             }

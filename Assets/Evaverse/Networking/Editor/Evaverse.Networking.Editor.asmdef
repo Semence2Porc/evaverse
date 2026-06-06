@@ -1,15 +1,16 @@
 {
-  "name": "Evaverse.Networking",
-  "rootNamespace": "Evaverse.Networking",
+  "name": "Evaverse.Networking.Editor",
+  "rootNamespace": "Evaverse.Networking.Editor",
   "references": [
     "Evaverse.Core",
+    "Evaverse.Gameplay",
+    "Evaverse.Networking",
     "Unity.Netcode.Runtime",
-    "Unity.Networking.Transport",
-    "Unity.Services.Core",
-    "Unity.Services.Authentication",
-    "Unity.Services.Multiplayer"
+    "Unity.Netcode.Editor"
   ],
-  "includePlatforms": [],
+  "includePlatforms": [
+    "Editor"
+  ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

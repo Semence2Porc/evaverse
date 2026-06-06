@@ -10,6 +10,12 @@ namespace Evaverse.Gameplay.Runtime.Racing
         [SerializeField] private HoverboardMotor hoverboard;
         [SerializeField] private bool showControls = true;
 
+        public void Configure(RaceLapTracker raceTracker, HoverboardMotor boardMotor)
+        {
+            tracker = raceTracker;
+            hoverboard = boardMotor;
+        }
+
         private bool finishRecorded;
         private GUIStyle panelStyle;
         private GUIStyle titleStyle;

@@ -3,8 +3,10 @@
   "rootNamespace": "Evaverse.Gameplay",
   "references": [
     "Evaverse.Core",
+    "Evaverse.World",
     "Unity.Cinemachine",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

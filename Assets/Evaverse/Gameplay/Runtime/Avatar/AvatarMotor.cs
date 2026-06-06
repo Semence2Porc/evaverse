@@ -29,6 +29,7 @@ namespace Evaverse.Gameplay.Runtime.Avatar
 
         public Vector2 MoveInput { get; private set; }
         public bool IsSprinting { get; private set; }
+        public bool InputEnabled { get; set; } = true;
 
         private void Awake()
         {
@@ -47,6 +48,13 @@ namespace Evaverse.Gameplay.Runtime.Avatar
 
         private void Update()
         {
+            if (!InputEnabled)
+            {
+                MoveInput = Vector2.zero;
+                IsSprinting = false;
+                return;
+            }
+
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 Cursor.lockState = CursorLockMode.None;

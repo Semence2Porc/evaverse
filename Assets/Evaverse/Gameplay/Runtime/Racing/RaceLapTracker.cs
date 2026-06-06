@@ -15,6 +15,12 @@ namespace Evaverse.Gameplay.Runtime.Racing
         [SerializeField] private RaceCourseDefinition course;
 
         public RaceCourseDefinition Course => course;
+
+        public void SetCourse(RaceCourseDefinition newCourse)
+        {
+            course = newCourse;
+            ResetProgress();
+        }
         public int CurrentLap { get; private set; } = 1;
         public int NextCheckpointIndex { get; private set; }
         public RaceRunState State { get; private set; } = RaceRunState.Idle;

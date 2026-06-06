@@ -4,7 +4,12 @@
   "references": [
     "Evaverse.Core",
     "Evaverse.Gameplay",
-    "Evaverse.World"
+    "Evaverse.World",
+    "Evaverse.Networking",
+    "Evaverse.Networking.Editor",
+    "Evaverse.UI",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport"
   ],
   "includePlatforms": [
     "Editor"

@@ -4,8 +4,11 @@ namespace Evaverse.Networking.Runtime.Sessions
 {
     public sealed class LocalSessionService : ISessionService, IInitializableService
     {
+        public SessionBackend Backend => SessionBackend.Local;
         public bool IsHosting { get; private set; }
         public bool IsConnected { get; private set; }
+        public string JoinCode { get; private set; } = string.Empty;
+        public string StatusMessage { get; private set; } = "Local session idle.";
 
         public void Initialize()
         {
@@ -21,6 +24,8 @@ namespace Evaverse.Networking.Runtime.Sessions
         {
             IsHosting = true;
             IsConnected = true;
+            JoinCode = "local";
+            StatusMessage = "Local host session active.";
             EvaLog.Info($"Started local host session '{config.SessionName}' for up to {config.MaxPlayers} players.");
         }
 
@@ -28,6 +33,8 @@ namespace Evaverse.Networking.Runtime.Sessions
         {
             IsHosting = false;
             IsConnected = true;
+            JoinCode = joinCode;
+            StatusMessage = "Local client session active.";
             EvaLog.Info($"Connected local client with join code '{joinCode}'.");
         }
 
@@ -40,6 +47,8 @@ namespace Evaverse.Networking.Runtime.Sessions
 
             IsHosting = false;
             IsConnected = false;
+            JoinCode = string.Empty;
+            StatusMessage = "Local session idle.";
             EvaLog.Info("Disconnected local session.");
         }
     }
