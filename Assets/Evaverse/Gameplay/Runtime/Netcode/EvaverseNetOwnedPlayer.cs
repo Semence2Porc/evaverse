@@ -12,12 +12,17 @@ namespace Evaverse.Gameplay.Runtime.Netcode
     [RequireComponent(typeof(NetworkObject))]
     public sealed class EvaverseNetOwnedPlayer : NetworkBehaviour
     {
+        private const string PersonalBoardName = "Personal Hoverboard";
+
         [SerializeField] private string spawnId = "plaza-default";
 
         private AvatarMotor avatarMotor;
         private HoverboardMountController mountController;
+        private HoverboardMotor boardMotor;
         private RaceLapTracker lapTracker;
         private RacePrototypeHud raceHud;
+        private NetworkPlayerMountSync mountSync;
+        private RaceLapTrackerNetworkSync raceSync;
         private CinemachinePlayerRig cinemachineRig;
         private Camera playerCamera;
         private AudioListener audioListener;
@@ -27,10 +32,11 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             CacheComponents();
             ApplyOwnership(IsOwner);
 
+            WirePersonalBoard();
+
             if (IsOwner)
             {
                 PlaceAtSpawn();
-                WireSceneReferences();
             }
         }
 
@@ -45,9 +51,12 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             mountController = GetComponent<HoverboardMountController>();
             lapTracker = GetComponent<RaceLapTracker>();
             raceHud = GetComponent<RacePrototypeHud>();
+            mountSync = GetComponent<NetworkPlayerMountSync>();
+            raceSync = GetComponent<RaceLapTrackerNetworkSync>();
             cinemachineRig = GetComponent<CinemachinePlayerRig>();
             playerCamera = GetComponentInChildren<Camera>(true);
             audioListener = GetComponentInChildren<AudioListener>(true);
+            boardMotor = transform.Find(PersonalBoardName)?.GetComponent<HoverboardMotor>();
         }
 
         private void ApplyOwnership(bool isOwner)
@@ -60,6 +69,11 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (mountController != null)
             {
                 mountController.InputEnabled = isOwner;
+            }
+
+            if (boardMotor != null)
+            {
+                boardMotor.InputEnabled = isOwner;
             }
 
             if (raceHud != null)
@@ -95,7 +109,7 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             transform.SetPositionAndRotation(pose.position + offset, pose.rotation);
         }
 
-        private void WireSceneReferences()
+        private void WirePersonalBoard()
         {
             RaceCourseDefinition course = FindFirstObjectByType<RaceCourseDefinition>();
             if (lapTracker != null && course != null)
@@ -103,7 +117,6 @@ namespace Evaverse.Gameplay.Runtime.Netcode
                 lapTracker.SetCourse(course);
             }
 
-            HoverboardMotor boardMotor = FindFirstObjectByType<HoverboardMotor>();
             if (boardMotor == null)
             {
                 return;
@@ -125,6 +138,16 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (raceHud != null)
             {
                 raceHud.Configure(lapTracker, boardMotor);
+            }
+
+            if (mountSync != null)
+            {
+                mountSync.Configure(mountController, boardMotor);
+            }
+
+            if (raceSync != null)
+            {
+                raceSync.Configure(lapTracker);
             }
         }
     }

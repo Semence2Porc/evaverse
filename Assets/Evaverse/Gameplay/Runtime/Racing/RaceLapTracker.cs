@@ -129,5 +129,36 @@ namespace Evaverse.Gameplay.Runtime.Racing
             CountdownRemaining = 0f;
             startedAtSeconds = Time.time;
         }
+
+        public RaceTrackerSnapshot CreateNetworkSnapshot()
+        {
+            return new RaceTrackerSnapshot
+            {
+                State = State,
+                CurrentLap = CurrentLap,
+                NextCheckpointIndex = NextCheckpointIndex,
+                CountdownRemaining = CountdownRemaining,
+                ElapsedSeconds = ElapsedSeconds
+            };
+        }
+
+        public void ApplyNetworkSnapshot(RaceTrackerSnapshot snapshot)
+        {
+            State = snapshot.State;
+            CurrentLap = snapshot.CurrentLap;
+            NextCheckpointIndex = snapshot.NextCheckpointIndex;
+            CountdownRemaining = snapshot.CountdownRemaining;
+
+            if (snapshot.State == RaceRunState.Running || snapshot.State == RaceRunState.Finished)
+            {
+                startedAtSeconds = Time.time - snapshot.ElapsedSeconds;
+            }
+            else
+            {
+                startedAtSeconds = 0f;
+            }
+
+            finishedSeconds = snapshot.State == RaceRunState.Finished ? snapshot.ElapsedSeconds : 0f;
+        }
     }
 }

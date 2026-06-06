@@ -25,7 +25,8 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
         private bool isDrifting;
         private bool boostRequested;
 
-        public float CurrentSpeed => Vector3.Dot(body.linearVelocity, transform.forward);
+        public float CurrentSpeed => body == null ? 0f : Vector3.Dot(body.linearVelocity, transform.forward);
+        public bool InputEnabled { get; set; } = true;
 
         private void Awake()
         {
@@ -35,11 +36,24 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         private void Update()
         {
+            if (!InputEnabled)
+            {
+                steerInput = Vector2.zero;
+                isDrifting = false;
+                boostRequested = false;
+                return;
+            }
+
             ReadInput();
         }
 
         private void FixedUpdate()
         {
+            if (!isActiveAndEnabled || !InputEnabled)
+            {
+                return;
+            }
+
             ApplyHover();
             ApplyDrive();
             ApplySteering();

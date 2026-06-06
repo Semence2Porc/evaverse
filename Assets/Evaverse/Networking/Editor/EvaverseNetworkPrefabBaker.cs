@@ -47,6 +47,8 @@ namespace Evaverse.Networking.Editor
             root.AddComponent<AvatarMotor>();
             root.AddComponent<HoverboardMountController>();
             root.AddComponent<RaceLapTracker>();
+            root.AddComponent<NetworkPlayerMountSync>();
+            root.AddComponent<RaceLapTrackerNetworkSync>();
             root.AddComponent<EvaverseNetOwnedPlayer>();
 
             GameObject racingProbe = new GameObject("Racing Trigger Probe");
@@ -85,6 +87,8 @@ namespace Evaverse.Networking.Editor
             CreateVisual("avatar-visor", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.45f, 0.33f), new Vector3(0.5f, 0.12f, 0.08f), orange);
             CreateVisual("avatar-backpack", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.2f, -0.28f), new Vector3(0.42f, 0.5f, 0.18f), metal);
 
+            CreatePersonalHoverboard(root.transform, metal, orange);
+
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
 
@@ -94,6 +98,51 @@ namespace Evaverse.Networking.Editor
 
             Debug.Log($"Network player prefab baked at {PrefabPath}.");
             return prefab;
+        }
+
+        private static void CreatePersonalHoverboard(Transform parent, Material deckMaterial, Material trimMaterial)
+        {
+            GameObject board = new GameObject("Personal Hoverboard");
+            board.transform.SetParent(parent, false);
+            board.transform.localPosition = new Vector3(2.5f, 0f, -1.2f);
+            board.transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
+
+            Rigidbody body = board.AddComponent<Rigidbody>();
+            body.mass = 24f;
+            body.useGravity = true;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+            BoxCollider boardCollider = board.AddComponent<BoxCollider>();
+            boardCollider.center = new Vector3(0f, 0.18f, 0f);
+            boardCollider.size = new Vector3(2.8f, 0.38f, 6.2f);
+
+            HoverboardMotor boardMotor = board.AddComponent<HoverboardMotor>();
+            boardMotor.enabled = false;
+            board.AddComponent<HoverboardMount>();
+
+            CreateVisual("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), new Vector3(2.8f, 0.22f, 6.2f), deckMaterial);
+            CreateVisual("hoverboard-neon-trim", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.36f, 0f), new Vector3(3.05f, 0.08f, 6.5f), trimMaterial);
+
+            GameObject groundProbe = new GameObject("Ground Probe");
+            groundProbe.transform.SetParent(board.transform, false);
+            groundProbe.transform.localPosition = new Vector3(0f, -0.45f, 0f);
+
+            GameObject riderSocket = new GameObject("Rider Socket");
+            riderSocket.transform.SetParent(board.transform, false);
+            riderSocket.transform.localPosition = new Vector3(0f, 1.15f, -0.2f);
+
+            GameObject dismountPoint = new GameObject("Dismount Point");
+            dismountPoint.transform.SetParent(board.transform, false);
+            dismountPoint.transform.localPosition = new Vector3(3.2f, 0.25f, 0f);
+
+            SerializedObject boardMotorObject = new SerializedObject(boardMotor);
+            boardMotorObject.FindProperty("groundProbe").objectReferenceValue = groundProbe.transform;
+            boardMotorObject.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject mountObject = new SerializedObject(board.GetComponent<HoverboardMount>());
+            mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
+            mountObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void RegisterNetworkPrefab(GameObject prefab)

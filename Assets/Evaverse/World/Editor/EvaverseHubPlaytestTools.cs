@@ -51,7 +51,11 @@ namespace Evaverse.World.Editor
             bool isNetworkHub = GameObject.Find("_EvaverseNetworking") != null;
             bool valid = true;
 
-            valid &= RequireObject("Prototype Hoverboard");
+            if (!isNetworkHub)
+            {
+                valid &= RequireObject("Prototype Hoverboard");
+            }
+
             valid &= RequireObject("race-start-gate");
             valid &= RequireObject("race-start-trigger");
             valid &= RequireObject("race-checkpoint-00");

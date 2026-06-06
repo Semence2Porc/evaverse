@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,6 +15,7 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         public bool IsMounted => hoverboardMount != null && hoverboardMount.IsMounted;
         public bool InputEnabled { get; set; } = true;
+        public event Action<bool> MountStateChanged;
 
         private void Awake()
         {
@@ -94,6 +96,8 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
             hoverboardMount.Mount(rider);
             hoverboardMotor.enabled = true;
+            hoverboardMotor.InputEnabled = InputEnabled;
+            MountStateChanged?.Invoke(true);
         }
 
         private void Dismount()
@@ -113,6 +117,22 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
             if (avatarController != null)
             {
                 avatarController.enabled = true;
+            }
+
+            MountStateChanged?.Invoke(false);
+        }
+
+        public void ApplyRemoteMountState(bool mounted)
+        {
+            if (hoverboardMotor != null)
+            {
+                hoverboardMotor.enabled = false;
+                hoverboardMotor.InputEnabled = false;
+            }
+
+            if (avatarController != null)
+            {
+                avatarController.enabled = !mounted;
             }
         }
 

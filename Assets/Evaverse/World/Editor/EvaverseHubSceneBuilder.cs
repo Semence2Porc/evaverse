@@ -744,54 +744,54 @@ namespace Evaverse.World.Editor
                 AssignRaceCourse(playerTracker, course);
             }
 
-            GameObject board = new GameObject("Prototype Hoverboard");
-            board.transform.SetParent(prototype, false);
-            board.transform.localPosition = new Vector3(5f, 1.45f, -28f);
-            board.transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
-
-            Rigidbody body = board.AddComponent<Rigidbody>();
-            body.mass = 24f;
-            body.useGravity = true;
-            body.interpolation = RigidbodyInterpolation.Interpolate;
-            body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-            BoxCollider boardCollider = board.AddComponent<BoxCollider>();
-            boardCollider.center = new Vector3(0f, 0.18f, 0f);
-            boardCollider.size = new Vector3(2.8f, 0.38f, 6.2f);
-
-            boardMotor = board.AddComponent<HoverboardMotor>();
-            boardMotor.enabled = false;
-
-            HoverboardMount boardMount = board.AddComponent<HoverboardMount>();
-
-            GameObject boardDeck = CreatePrimitive("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), Vector3.zero, new Vector3(2.8f, 0.22f, 6.2f), materials.MetalDark);
-            MarkDynamic(boardDeck);
-            RemoveCollider(boardDeck);
-            GameObject boardTrim = CreatePrimitive("hoverboard-neon-trim", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.36f, 0f), Vector3.zero, new Vector3(3.05f, 0.08f, 6.5f), materials.NeonOrange);
-            MarkDynamic(boardTrim);
-            RemoveCollider(boardTrim);
-
-            GameObject groundProbe = new GameObject("Ground Probe");
-            groundProbe.transform.SetParent(board.transform, false);
-            groundProbe.transform.localPosition = new Vector3(0f, -0.45f, 0f);
-
-            GameObject riderSocket = new GameObject("Rider Socket");
-            riderSocket.transform.SetParent(board.transform, false);
-            riderSocket.transform.localPosition = new Vector3(0f, 1.15f, -0.2f);
-
-            GameObject dismountPoint = new GameObject("Dismount Point");
-            dismountPoint.transform.SetParent(board.transform, false);
-            dismountPoint.transform.localPosition = new Vector3(3.2f, 0.25f, 0f);
-
-            SerializedObject boardMotorObject = new SerializedObject(boardMotor);
-            boardMotorObject.FindProperty("groundProbe").objectReferenceValue = groundProbe.transform;
-            boardMotorObject.ApplyModifiedPropertiesWithoutUndo();
-
-            SerializedObject mountObject = new SerializedObject(boardMount);
-            mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
-            mountObject.ApplyModifiedPropertiesWithoutUndo();
             if (includeLocalPlayer)
             {
+                GameObject board = new GameObject("Prototype Hoverboard");
+                board.transform.SetParent(prototype, false);
+                board.transform.localPosition = new Vector3(5f, 1.45f, -28f);
+                board.transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
+
+                Rigidbody body = board.AddComponent<Rigidbody>();
+                body.mass = 24f;
+                body.useGravity = true;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+                body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+                BoxCollider boardCollider = board.AddComponent<BoxCollider>();
+                boardCollider.center = new Vector3(0f, 0.18f, 0f);
+                boardCollider.size = new Vector3(2.8f, 0.38f, 6.2f);
+
+                boardMotor = board.AddComponent<HoverboardMotor>();
+                boardMotor.enabled = false;
+
+                HoverboardMount boardMount = board.AddComponent<HoverboardMount>();
+
+                GameObject boardDeck = CreatePrimitive("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), Vector3.zero, new Vector3(2.8f, 0.22f, 6.2f), materials.MetalDark);
+                MarkDynamic(boardDeck);
+                RemoveCollider(boardDeck);
+                GameObject boardTrim = CreatePrimitive("hoverboard-neon-trim", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.36f, 0f), Vector3.zero, new Vector3(3.05f, 0.08f, 6.5f), materials.NeonOrange);
+                MarkDynamic(boardTrim);
+                RemoveCollider(boardTrim);
+
+                GameObject groundProbe = new GameObject("Ground Probe");
+                groundProbe.transform.SetParent(board.transform, false);
+                groundProbe.transform.localPosition = new Vector3(0f, -0.45f, 0f);
+
+                GameObject riderSocket = new GameObject("Rider Socket");
+                riderSocket.transform.SetParent(board.transform, false);
+                riderSocket.transform.localPosition = new Vector3(0f, 1.15f, -0.2f);
+
+                GameObject dismountPoint = new GameObject("Dismount Point");
+                dismountPoint.transform.SetParent(board.transform, false);
+                dismountPoint.transform.localPosition = new Vector3(3.2f, 0.25f, 0f);
+
+                SerializedObject boardMotorObject = new SerializedObject(boardMotor);
+                boardMotorObject.FindProperty("groundProbe").objectReferenceValue = groundProbe.transform;
+                boardMotorObject.ApplyModifiedPropertiesWithoutUndo();
+
+                SerializedObject mountObject = new SerializedObject(boardMount);
+                mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
+                mountObject.ApplyModifiedPropertiesWithoutUndo();
                 Transform playerTransform = controller.transform;
                 HoverboardMountController mountController = playerTransform.GetComponent<HoverboardMountController>();
                 if (mountController == null)
@@ -834,7 +834,7 @@ namespace Evaverse.World.Editor
 
             string controlsLabel = includeLocalPlayer
                 ? "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nEsc — free cursor"
-                : "Network Hub\nUse the session panel to Host or Join\nSpawned players mount the shared hoverboard with E";
+                : "Network Hub\nUse the session panel to Host or Join\nEach player spawns with a personal hoverboard (E to mount)";
 
             CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), controlsLabel, Color.white);
         }
