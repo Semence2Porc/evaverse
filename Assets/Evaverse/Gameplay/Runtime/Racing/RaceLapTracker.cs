@@ -15,6 +15,12 @@ namespace Evaverse.Gameplay.Runtime.Racing
         [SerializeField] private RaceCourseDefinition course;
 
         public RaceCourseDefinition Course => course;
+
+        public void SetCourse(RaceCourseDefinition newCourse)
+        {
+            course = newCourse;
+            ResetProgress();
+        }
         public int CurrentLap { get; private set; } = 1;
         public int NextCheckpointIndex { get; private set; }
         public RaceRunState State { get; private set; } = RaceRunState.Idle;
@@ -128,6 +134,37 @@ namespace Evaverse.Gameplay.Runtime.Racing
             State = RaceRunState.Running;
             CountdownRemaining = 0f;
             startedAtSeconds = Time.time;
+        }
+
+        public RaceTrackerSnapshot CreateNetworkSnapshot()
+        {
+            return new RaceTrackerSnapshot
+            {
+                State = State,
+                CurrentLap = CurrentLap,
+                NextCheckpointIndex = NextCheckpointIndex,
+                CountdownRemaining = CountdownRemaining,
+                ElapsedSeconds = ElapsedSeconds
+            };
+        }
+
+        public void ApplyNetworkSnapshot(RaceTrackerSnapshot snapshot)
+        {
+            State = snapshot.State;
+            CurrentLap = snapshot.CurrentLap;
+            NextCheckpointIndex = snapshot.NextCheckpointIndex;
+            CountdownRemaining = snapshot.CountdownRemaining;
+
+            if (snapshot.State == RaceRunState.Running || snapshot.State == RaceRunState.Finished)
+            {
+                startedAtSeconds = Time.time - snapshot.ElapsedSeconds;
+            }
+            else
+            {
+                startedAtSeconds = 0f;
+            }
+
+            finishedSeconds = snapshot.State == RaceRunState.Finished ? snapshot.ElapsedSeconds : 0f;
         }
     }
 }

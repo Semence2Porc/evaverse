@@ -3,6 +3,9 @@
 .SYNOPSIS
   Regenerates Assets/_Project/Scenes/Hub.unity via EvaverseHubSceneBuilder.BuildFromCommandLine.
 
+.PARAMETER HubMode
+  local | direct | relay
+
 .NOTES
   Unity locks the project: close the Unity Editor (or any other Unity using this folder) first.
   Match Editor version to ProjectSettings/ProjectVersion.txt (default path is Unity 6000.0.65f1 Hub install).
@@ -11,6 +14,8 @@
   Use -RelayHub to build the Relay-backed Hub (no baked single-player prototype; requires Unity project services enabled).
 #>
 param(
+    [ValidateSet("local", "direct", "relay")]
+    [string] $HubMode = "local",
     [string] $UnityEditor = "${env:ProgramFiles}\Unity\Hub\Editor\6000.0.65f1\Editor\Unity.exe",
     [string] $ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $LogFile = "",
@@ -19,6 +24,22 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not (Test-Path -LiteralPath $UnityEditor)) {
+    if ($IsLinux -or $IsMacOS) {
+        $linuxCandidates = @(
+            "/opt/unity/Editor/Unity",
+            "/usr/bin/unity",
+            "$HOME/Unity/Hub/Editor/6000.0.65f1/Editor/Unity"
+        )
+        foreach ($candidate in $linuxCandidates) {
+            if (Test-Path -LiteralPath $candidate) {
+                $UnityEditor = $candidate
+                break
+            }
+        }
+    }
+}
 
 if (-not (Test-Path -LiteralPath $UnityEditor)) {
     Write-Error "Unity.exe not found: $UnityEditor`nInstall matching editor or pass -UnityEditor."
@@ -50,12 +71,14 @@ $argsList = @(
     "-nographics",
     "-quit",
     "-projectPath", $ProjectPath,
-    "-executeMethod", $exec,
+    "-executeMethod", "Evaverse.World.Editor.EvaverseHubSceneBuilder.BuildFromCommandLine",
+    "-evaverseHubMode", $HubMode,
     "-logFile", $LogFile
 )
 
 Write-Host "Unity: $UnityEditor"
 Write-Host "Project: $ProjectPath"
+Write-Host "Hub mode: $HubMode"
 Write-Host "Log: $LogFile"
 if ($NetcodeHub) { Write-Host "Mode: Netcode Hub (no local prototype)" }
 if ($RelayHub) { Write-Host "Mode: Relay Hub (no local prototype)" }

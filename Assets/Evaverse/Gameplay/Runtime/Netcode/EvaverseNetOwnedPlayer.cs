@@ -1,160 +1,184 @@
 using Evaverse.Gameplay.Runtime.Avatar;
+using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
+using Evaverse.Gameplay.Runtime.View;
+using Evaverse.World.Runtime.Authoring;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace Evaverse.Gameplay.Runtime.Netcode
 {
-    /// <summary>
-    /// Enables local locomotion / cameras only for the owning client. Remote peers become view-only ghosts.
-    /// </summary>
+    [DisallowMultipleComponent]
     [RequireComponent(typeof(NetworkObject))]
     public sealed class EvaverseNetOwnedPlayer : NetworkBehaviour
     {
-        [SerializeField] private AvatarMotor avatarMotor;
-        [SerializeField] private CharacterController characterController;
-        [SerializeField] private RaceLapTracker lapTracker;
-        [SerializeField] private RacePrototypeHud raceHud;
-        [SerializeField] private string spawnObjectName = "spawn-plaza-default";
-        [SerializeField] private float spawnSpreadRadius = 3.5f;
+        private const string PersonalBoardName = "Personal Hoverboard";
 
-        private Camera[] cameras;
-        private bool spawnApplied;
+        [SerializeField] private string spawnId = "plaza-default";
 
-        private void Awake()
-        {
-            ResolveReferences();
-        }
+        private AvatarMotor avatarMotor;
+        private HoverboardMountController mountController;
+        private HoverboardMotor boardMotor;
+        private RaceLapTracker lapTracker;
+        private RacePrototypeHud raceHud;
+        private RaceCheckpointGuide checkpointGuide;
+        private NetworkRaceProgressLabel raceProgressLabel;
+        private NetworkPlayerDisplayName displayName;
+        private RaceFinishReporter finishReporter;
+        private NetworkPlayerMountSync mountSync;
+        private RaceLapTrackerNetworkSync raceSync;
+        private CinemachinePlayerRig cinemachineRig;
+        private Camera playerCamera;
+        private AudioListener audioListener;
 
         public override void OnNetworkSpawn()
         {
-            ResolveReferences();
-            ResolveRaceCourse();
-            cameras = GetComponentsInChildren<Camera>(true);
-            ApplyOwnership();
-            ApplyOwnerSpawnPose();
-        }
+            CacheComponents();
+            ApplyOwnership(IsOwner);
 
-        private void LateUpdate()
-        {
-            if (!IsSpawned)
+            WirePersonalBoard();
+
+            if (IsOwner)
             {
-                return;
-            }
-
-            ApplyOwnership();
-        }
-
-        private void ResolveReferences()
-        {
-            if (avatarMotor == null)
-            {
-                avatarMotor = GetComponent<AvatarMotor>();
-            }
-
-            if (characterController == null)
-            {
-                characterController = GetComponent<CharacterController>();
-            }
-
-            if (lapTracker == null)
-            {
-                lapTracker = GetComponent<RaceLapTracker>();
-            }
-
-            if (raceHud == null)
-            {
-                raceHud = GetComponentInChildren<RacePrototypeHud>(true);
+                PlaceAtSpawn();
             }
         }
 
-        private void ApplyOwnership()
+        public override void OnNetworkDespawn()
         {
-            bool owner = IsOwner;
+            ApplyOwnership(false);
+        }
+
+        private void CacheComponents()
+        {
+            avatarMotor = GetComponent<AvatarMotor>();
+            mountController = GetComponent<HoverboardMountController>();
+            lapTracker = GetComponent<RaceLapTracker>();
+            raceHud = GetComponent<RacePrototypeHud>();
+            checkpointGuide = GetComponent<RaceCheckpointGuide>();
+            raceProgressLabel = GetComponent<NetworkRaceProgressLabel>();
+            displayName = GetComponent<NetworkPlayerDisplayName>();
+            finishReporter = GetComponent<RaceFinishReporter>();
+            mountSync = GetComponent<NetworkPlayerMountSync>();
+            raceSync = GetComponent<RaceLapTrackerNetworkSync>();
+            cinemachineRig = GetComponent<CinemachinePlayerRig>();
+            playerCamera = GetComponentInChildren<Camera>(true);
+            audioListener = GetComponentInChildren<AudioListener>(true);
+            boardMotor = transform.Find(PersonalBoardName)?.GetComponent<HoverboardMotor>();
+        }
+
+        private void ApplyOwnership(bool isOwner)
+        {
             if (avatarMotor != null)
             {
-                avatarMotor.enabled = owner;
+                avatarMotor.InputEnabled = isOwner;
             }
 
-            if (characterController != null)
+            if (mountController != null)
             {
-                characterController.enabled = owner;
+                mountController.InputEnabled = isOwner;
             }
 
-            if (lapTracker != null)
+            if (boardMotor != null)
             {
-                lapTracker.enabled = owner;
+                boardMotor.InputEnabled = isOwner;
             }
 
             if (raceHud != null)
             {
-                raceHud.enabled = owner;
+                raceHud.enabled = isOwner;
             }
 
-            if (cameras != null)
+            if (cinemachineRig != null)
             {
-                for (int i = 0; i < cameras.Length; i++)
-                {
-                    if (cameras[i] != null)
-                    {
-                        cameras[i].enabled = owner;
-                    }
-                }
+                cinemachineRig.enabled = isOwner;
+            }
+
+            if (playerCamera != null)
+            {
+                playerCamera.enabled = isOwner;
+            }
+
+            if (audioListener != null)
+            {
+                audioListener.enabled = isOwner;
             }
         }
 
-        private void ApplyOwnerSpawnPose()
+        private void PlaceAtSpawn()
         {
-            if (!IsOwner || spawnApplied)
-            {
-                return;
-            }
+            WorldMapAnchor anchor = FindFirstObjectByType<WorldMapAnchor>();
+            Pose pose = anchor != null
+                ? anchor.ResolveSpawnPose(spawnId)
+                : new Pose(transform.position, transform.rotation);
 
-            spawnApplied = true;
-
-            GameObject spawn = GameObject.Find(spawnObjectName);
-            if (spawn == null)
-            {
-                return;
-            }
-
-            bool controllerWasEnabled = characterController != null && characterController.enabled;
-            if (characterController != null)
-            {
-                characterController.enabled = false;
-            }
-
-            Vector3 offset = ResolveSpawnOffset();
-            transform.SetPositionAndRotation(spawn.transform.position + offset, spawn.transform.rotation);
-
-            if (characterController != null)
-            {
-                characterController.enabled = controllerWasEnabled;
-            }
+            float spread = (OwnerClientId % 8) * 1.5f;
+            Vector3 offset = pose.rotation * new Vector3(spread, 0f, 0f);
+            transform.SetPositionAndRotation(pose.position + offset, pose.rotation);
         }
 
-        private Vector3 ResolveSpawnOffset()
+        private void WirePersonalBoard()
         {
-            if (OwnerClientId == 0 || spawnSpreadRadius <= 0f)
-            {
-                return Vector3.zero;
-            }
-
-            float angle = (OwnerClientId % 8) * 45f;
-            return Quaternion.Euler(0f, angle, 0f) * (Vector3.right * spawnSpreadRadius);
-        }
-
-        private void ResolveRaceCourse()
-        {
-            if (lapTracker == null || lapTracker.Course != null)
-            {
-                return;
-            }
-
-            RaceCourseDefinition course = Object.FindFirstObjectByType<RaceCourseDefinition>();
-            if (course != null)
+            RaceCourseDefinition course = FindFirstObjectByType<RaceCourseDefinition>();
+            if (lapTracker != null && course != null)
             {
                 lapTracker.SetCourse(course);
+            }
+
+            if (boardMotor == null)
+            {
+                return;
+            }
+
+            HoverboardMount boardMount = boardMotor.GetComponent<HoverboardMount>();
+            Transform dismountPoint = boardMotor.transform.Find("Dismount Point");
+
+            if (mountController != null)
+            {
+                mountController.Configure(
+                    transform,
+                    GetComponent<CharacterController>(),
+                    boardMotor,
+                    boardMount,
+                    dismountPoint);
+            }
+
+            if (raceHud != null)
+            {
+                raceHud.Configure(lapTracker, boardMotor);
+            }
+
+            if (checkpointGuide != null)
+            {
+                Transform arrow = transform.Find("Checkpoint Arrow");
+                checkpointGuide.Configure(lapTracker, arrow);
+            }
+
+            if (mountSync != null)
+            {
+                mountSync.Configure(mountController, boardMotor, transform);
+            }
+
+            if (raceProgressLabel != null)
+            {
+                TextMesh label = transform.Find("Race Progress Label")?.GetComponent<TextMesh>();
+                raceProgressLabel.Configure(lapTracker, label);
+            }
+
+            if (raceSync != null)
+            {
+                raceSync.Configure(lapTracker);
+            }
+
+            if (displayName != null)
+            {
+                TextMesh nameLabel = transform.Find("Player Name Label")?.GetComponent<TextMesh>();
+                displayName.Configure(nameLabel);
+            }
+
+            if (finishReporter != null)
+            {
+                finishReporter.Configure(lapTracker, displayName);
             }
         }
     }

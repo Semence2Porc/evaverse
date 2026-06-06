@@ -2,9 +2,9 @@
   "name": "Evaverse.Networking.Editor",
   "rootNamespace": "Evaverse.Networking.Editor",
   "references": [
-    "Evaverse.Networking",
+    "Evaverse.Core",
     "Evaverse.Gameplay",
-    "Unity.Cinemachine",
+    "Evaverse.Networking",
     "Unity.Netcode.Runtime",
     "Unity.Netcode.Editor"
   ],

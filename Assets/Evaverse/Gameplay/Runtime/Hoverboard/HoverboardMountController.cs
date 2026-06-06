@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,6 +14,8 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
         [SerializeField] private float mountDistance = 4f;
 
         public bool IsMounted => hoverboardMount != null && hoverboardMount.IsMounted;
+        public bool InputEnabled { get; set; } = true;
+        public event Action<bool> MountStateChanged;
 
         private void Awake()
         {
@@ -32,9 +35,23 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
             }
         }
 
+        public void Configure(
+            Transform riderTransform,
+            CharacterController controller,
+            HoverboardMotor motor,
+            HoverboardMount mount,
+            Transform dismount)
+        {
+            rider = riderTransform;
+            avatarController = controller;
+            hoverboardMotor = motor;
+            hoverboardMount = mount;
+            dismountPoint = dismount;
+        }
+
         private void Update()
         {
-            if (!WasMountTogglePressed())
+            if (!InputEnabled || !WasMountTogglePressed())
             {
                 return;
             }
@@ -79,6 +96,8 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
             hoverboardMount.Mount(rider);
             hoverboardMotor.enabled = true;
+            hoverboardMotor.InputEnabled = InputEnabled;
+            MountStateChanged?.Invoke(true);
         }
 
         private void Dismount()
@@ -98,6 +117,22 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
             if (avatarController != null)
             {
                 avatarController.enabled = true;
+            }
+
+            MountStateChanged?.Invoke(false);
+        }
+
+        public void ApplyRemoteMountState(bool mounted)
+        {
+            if (hoverboardMotor != null)
+            {
+                hoverboardMotor.enabled = false;
+                hoverboardMotor.InputEnabled = false;
+            }
+
+            if (avatarController != null)
+            {
+                avatarController.enabled = !mounted;
             }
         }
 

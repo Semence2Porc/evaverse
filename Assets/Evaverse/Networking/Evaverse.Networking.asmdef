@@ -3,11 +3,11 @@
   "rootNamespace": "Evaverse.Networking",
   "references": [
     "Evaverse.Core",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
     "Unity.Services.Core",
     "Unity.Services.Authentication",
-    "Unity.Services.Multiplayer",
-    "Unity.Networking.Transport",
-    "Unity.Netcode.Runtime"
+    "Unity.Services.Multiplayer"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

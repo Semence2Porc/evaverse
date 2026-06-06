@@ -4,8 +4,13 @@ using Evaverse.Gameplay.Runtime.Avatar;
 using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.View;
-using Evaverse.Networking.Runtime;
+using Evaverse.Networking.Editor;
+using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
+using Evaverse.Gameplay.Runtime.Netcode;
+using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Racing;
+using Evaverse.UI.Runtime.Session;
 using Evaverse.World.Runtime.Authoring;
 using Evaverse.World.Runtime.Definitions;
 using Unity.Netcode;
@@ -29,40 +34,69 @@ namespace Evaverse.World.Editor
 
         private static readonly Vector3 PlazaCenter = Vector3.zero;
 
+        public enum HubBuildMode
+        {
+            Local = 0,
+            DirectNetcode = 1,
+            Relay = 2
+        }
+
         [MenuItem("Evaverse/World/Build Revival Hub Scene")]
-        public static void BuildFromMenu()
+        public static void BuildLocalFromMenu()
         {
-            Build(false, SessionBackend.Local);
+            Build(HubBuildMode.Local);
         }
 
-        [MenuItem("Evaverse/World/Build Revival Hub Scene - Netcode Listen (no baked single-player prototype)")]
-        public static void BuildFromMenuNetcode()
+        [MenuItem("Evaverse/World/Build Netcode Hub Scene (Direct)")]
+        public static void BuildDirectNetcodeFromMenu()
         {
-            Build(true, SessionBackend.Netcode);
+            Build(HubBuildMode.DirectNetcode);
         }
 
-        [MenuItem("Evaverse/World/Build Revival Hub Scene - Relay (no baked single-player prototype)")]
-        public static void BuildFromMenuRelay()
+        [MenuItem("Evaverse/World/Build Netcode Hub Scene (Relay)")]
+        public static void BuildRelayFromMenu()
         {
-            Build(true, SessionBackend.MultiplayerRelay);
+            Build(HubBuildMode.Relay);
         }
 
         public static void BuildFromCommandLine()
         {
-            Build(false, SessionBackend.Local);
+            Build(ResolveCommandLineMode());
         }
 
-        public static void BuildFromCommandLineNetcodeHub()
+        private static HubBuildMode ResolveCommandLineMode()
         {
-            Build(true, SessionBackend.Netcode);
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (!string.Equals(args[i], "-evaverseHubMode", StringComparison.OrdinalIgnoreCase) || i + 1 >= args.Length)
+                {
+                    continue;
+                }
+
+                return ParseHubBuildMode(args[i + 1]);
+            }
+
+            return HubBuildMode.Local;
         }
 
-        public static void BuildFromCommandLineRelayHub()
+        private static HubBuildMode ParseHubBuildMode(string rawMode)
         {
-            Build(true, SessionBackend.MultiplayerRelay);
+            if (string.Equals(rawMode, "direct", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawMode, "netcode", StringComparison.OrdinalIgnoreCase))
+            {
+                return HubBuildMode.DirectNetcode;
+            }
+
+            if (string.Equals(rawMode, "relay", StringComparison.OrdinalIgnoreCase))
+            {
+                return HubBuildMode.Relay;
+            }
+
+            return HubBuildMode.Local;
         }
 
-        private static void Build(bool skipLocalPrototype, SessionBackend sessionBackend)
+        private static void Build(HubBuildMode mode)
         {
             EnsureProjectFolders();
 
@@ -85,14 +119,15 @@ namespace Evaverse.World.Editor
             BuildDistricts(root.transform, materials, spireMesh);
             RaceCourseDefinition course = BuildRaceCourse(root.transform, materials);
             BuildSpawnPoints(root.transform);
-            BuildSessionStack(root.transform, sessionBackend);
-            if (!skipLocalPrototype)
+
+            if (mode == HubBuildMode.Local)
             {
-                BuildPlayablePrototype(root.transform, materials, course);
+                BuildPlayablePrototype(root.transform, materials, course, includeLocalPlayer: true);
             }
             else
             {
-                _ = course;
+                BuildPlayablePrototype(root.transform, materials, course, includeLocalPlayer: false);
+                BuildNetworkingStack(root.transform, mode);
             }
 
             BuildOverviewCamera();
@@ -103,7 +138,48 @@ namespace Evaverse.World.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"Evaverse Revival Hub generated at {ScenePath} with map definition {MapDefinitionPath}.");
+            Debug.Log($"Evaverse Revival Hub generated at {ScenePath} ({mode}) with map definition {MapDefinitionPath}.");
+        }
+
+        private static void BuildNetworkingStack(Transform parent, HubBuildMode mode)
+        {
+            GameObject networkingRoot = new GameObject("_EvaverseNetworking");
+            networkingRoot.transform.SetParent(parent, false);
+
+            NetworkManager networkManager = networkingRoot.AddComponent<NetworkManager>();
+            UnityTransport transport = networkingRoot.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig.NetworkTransport = transport;
+
+            NetcodeBootstrap bootstrap = networkingRoot.AddComponent<NetcodeBootstrap>();
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/NetworkPlayerPrototype.prefab");
+            if (playerPrefab == null)
+            {
+                playerPrefab = EvaverseNetworkPrefabBaker.Bake();
+            }
+
+            SerializedObject bootstrapObject = new SerializedObject(bootstrap);
+            bootstrapObject.FindProperty("playerPrefab").objectReferenceValue = playerPrefab;
+            bootstrapObject.ApplyModifiedPropertiesWithoutUndo();
+
+            SessionConfig sessionConfig = networkingRoot.AddComponent<SessionConfig>();
+            SessionBootstrap sessionBootstrap = networkingRoot.AddComponent<SessionBootstrap>();
+            SerializedObject sessionBootstrapObject = new SerializedObject(sessionBootstrap);
+            sessionBootstrapObject.FindProperty("backend").enumValueIndex = mode == HubBuildMode.Relay
+                ? (int)SessionBackend.MultiplayerRelay
+                : (int)SessionBackend.DirectNetcode;
+            sessionBootstrapObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
+            sessionBootstrapObject.ApplyModifiedPropertiesWithoutUndo();
+
+            networkingRoot.AddComponent<NetworkObject>();
+            networkingRoot.AddComponent<NetworkRaceSessionTracker>();
+            networkingRoot.AddComponent<NetcodeSessionLifecycleBridge>();
+            networkingRoot.AddComponent<RaceSessionFinishBoardUi>();
+
+            EvaverseSessionJoinUi joinUi = networkingRoot.AddComponent<EvaverseSessionJoinUi>();
+            SerializedObject joinUiObject = new SerializedObject(joinUi);
+            joinUiObject.FindProperty("sessionConfig").objectReferenceValue = sessionConfig;
+            joinUiObject.FindProperty("showDebugDetails").boolValue = false;
+            joinUiObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void EnsureSceneInBuildSettings()
@@ -617,186 +693,175 @@ namespace Evaverse.World.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void BuildSessionStack(Transform parent, SessionBackend mode)
-        {
-            GameObject session = new GameObject("_EvaverseSession");
-            session.transform.SetParent(parent, false);
-            session.AddComponent<SessionConfig>();
-            session.AddComponent<UnityServicesBootstrap>();
-
-            SessionBootstrap bootstrap = session.AddComponent<SessionBootstrap>();
-            SerializedObject bootSerialized = new SerializedObject(bootstrap);
-            bootSerialized.FindProperty("backend").enumValueIndex = (int)mode;
-            bootSerialized.FindProperty("registerDebugNetcodeHud").boolValue = true;
-            bootSerialized.ApplyModifiedPropertiesWithoutUndo();
-
-            EvaverseSessionDebugHud hud = session.AddComponent<EvaverseSessionDebugHud>();
-            hud.enabled = false;
-
-            if (mode != SessionBackend.Local)
-            {
-                BuildNetcodeManagers(parent);
-            }
-        }
-
-        private static void BuildNetcodeManagers(Transform parent)
-        {
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(NetworkPlayerPrefabPath);
-            if (prefab == null)
-            {
-                Debug.LogWarning(
-                    $"Evaverse: network player prefab missing at {NetworkPlayerPrefabPath}. Run 'Evaverse/Networking/Bake Network Player Prefab' before a Netcode hub build.");
-            }
-
-            GameObject nmGo = new GameObject("_EvaverseNetcode");
-            nmGo.transform.SetParent(parent, false);
-            nmGo.AddComponent<UnityTransport>();
-            nmGo.AddComponent<NetworkManager>();
-            NetcodeBootstrap nb = nmGo.AddComponent<NetcodeBootstrap>();
-
-            if (prefab != null)
-            {
-                SerializedObject nbSerialized = new SerializedObject(nb);
-                nbSerialized.FindProperty("playerPrefab").objectReferenceValue = prefab;
-                nbSerialized.ApplyModifiedPropertiesWithoutUndo();
-
-                NetworkManager networkManager = nmGo.GetComponent<NetworkManager>();
-                if (networkManager.NetworkConfig == null)
-                {
-                    networkManager.NetworkConfig = new NetworkConfig();
-                }
-
-                networkManager.NetworkConfig.PlayerPrefab = prefab;
-            }
-        }
-
-        private static void BuildPlayablePrototype(Transform parent, MaterialLibrary materials, RaceCourseDefinition course)
+        private static void BuildPlayablePrototype(Transform parent, MaterialLibrary materials, RaceCourseDefinition course, bool includeLocalPlayer)
         {
             Transform prototype = CreateGroup(parent, "Playable Prototype");
 
-            GameObject player = new GameObject("Local Player Prototype");
-            player.transform.SetParent(prototype, false);
-            player.transform.localPosition = new Vector3(0f, 1.25f, -28f);
+            CharacterController controller = null;
+            RaceLapTracker playerTracker = null;
+            HoverboardMotor boardMotor = null;
 
-            CharacterController controller = player.AddComponent<CharacterController>();
-            controller.height = 2f;
-            controller.radius = 0.36f;
-            controller.center = new Vector3(0f, 1f, 0f);
+            if (includeLocalPlayer)
+            {
+                GameObject player = new GameObject("Local Player Prototype");
+                player.transform.SetParent(prototype, false);
+                player.transform.localPosition = new Vector3(0f, 1.25f, -28f);
 
-            GameObject racingProbe = new GameObject("Racing Trigger Probe");
-            racingProbe.transform.SetParent(player.transform, false);
-            racingProbe.transform.localPosition = new Vector3(0f, 1f, 0f);
-            Rigidbody probeBody = racingProbe.AddComponent<Rigidbody>();
-            probeBody.isKinematic = true;
-            probeBody.useGravity = false;
-            CapsuleCollider probeCollider = racingProbe.AddComponent<CapsuleCollider>();
-            probeCollider.isTrigger = true;
-            probeCollider.radius = 0.45f;
-            probeCollider.height = 1.9f;
-            probeCollider.direction = 1;
-            probeCollider.center = Vector3.zero;
+                controller = player.AddComponent<CharacterController>();
+                controller.height = 2f;
+                controller.radius = 0.36f;
+                controller.center = new Vector3(0f, 1f, 0f);
 
-            AvatarMotor avatarMotor = player.AddComponent<AvatarMotor>();
-            RaceLapTracker playerTracker = player.AddComponent<RaceLapTracker>();
+                GameObject racingProbe = new GameObject("Racing Trigger Probe");
+                racingProbe.transform.SetParent(player.transform, false);
+                racingProbe.transform.localPosition = new Vector3(0f, 1f, 0f);
+                Rigidbody probeBody = racingProbe.AddComponent<Rigidbody>();
+                probeBody.isKinematic = true;
+                probeBody.useGravity = false;
+                CapsuleCollider probeCollider = racingProbe.AddComponent<CapsuleCollider>();
+                probeCollider.isTrigger = true;
+                probeCollider.radius = 0.45f;
+                probeCollider.height = 1.9f;
+                probeCollider.direction = 1;
+                probeCollider.center = Vector3.zero;
 
-            GameObject avatarVisual = CreatePrimitive("avatar-capsule-visual", PrimitiveType.Capsule, player.transform, new Vector3(0f, 1f, 0f), Vector3.zero, new Vector3(0.72f, 1f, 0.72f), materials.NeonCyan);
-            MarkDynamic(avatarVisual);
-            RemoveCollider(avatarVisual);
+                AvatarMotor avatarMotor = player.AddComponent<AvatarMotor>();
+                playerTracker = player.AddComponent<RaceLapTracker>();
 
-            GameObject visor = CreatePrimitive("avatar-visor", PrimitiveType.Cube, player.transform, new Vector3(0f, 1.45f, 0.33f), Vector3.zero, new Vector3(0.5f, 0.12f, 0.08f), materials.NeonOrange);
-            MarkDynamic(visor);
-            RemoveCollider(visor);
+                GameObject avatarVisual = CreatePrimitive("avatar-capsule-visual", PrimitiveType.Capsule, player.transform, new Vector3(0f, 1f, 0f), Vector3.zero, new Vector3(0.72f, 1f, 0.72f), materials.NeonCyan);
+                MarkDynamic(avatarVisual);
+                RemoveCollider(avatarVisual);
 
-            GameObject pivot = new GameObject("Camera Pivot");
-            pivot.transform.SetParent(player.transform, false);
-            pivot.transform.localPosition = new Vector3(0f, 1.68f, 0f);
+                GameObject visor = CreatePrimitive("avatar-visor", PrimitiveType.Cube, player.transform, new Vector3(0f, 1.45f, 0.33f), Vector3.zero, new Vector3(0.5f, 0.12f, 0.08f), materials.NeonOrange);
+                MarkDynamic(visor);
+                RemoveCollider(visor);
 
-            GameObject playerCamera = new GameObject("Main Camera");
-            playerCamera.tag = "MainCamera";
-            playerCamera.transform.SetParent(player.transform, false);
-            Camera camera = playerCamera.AddComponent<Camera>();
-            camera.fieldOfView = 58f;
-            camera.nearClipPlane = 0.2f;
-            camera.farClipPlane = 1800f;
+                GameObject pivot = new GameObject("Camera Pivot");
+                pivot.transform.SetParent(player.transform, false);
+                pivot.transform.localPosition = new Vector3(0f, 1.68f, 0f);
 
-            SerializedObject avatarObject = new SerializedObject(avatarMotor);
-            avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
-            avatarObject.ApplyModifiedPropertiesWithoutUndo();
-            AssignRaceCourse(playerTracker, course);
+                GameObject playerCamera = new GameObject("Main Camera");
+                playerCamera.tag = "MainCamera";
+                playerCamera.transform.SetParent(player.transform, false);
+                Camera camera = playerCamera.AddComponent<Camera>();
+                camera.fieldOfView = 58f;
+                camera.nearClipPlane = 0.2f;
+                camera.farClipPlane = 1800f;
+                playerCamera.AddComponent<AudioListener>();
 
-            GameObject board = new GameObject("Prototype Hoverboard");
-            board.transform.SetParent(prototype, false);
-            board.transform.localPosition = new Vector3(5f, 1.45f, -28f);
-            board.transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
+                SerializedObject avatarObject = new SerializedObject(avatarMotor);
+                avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
+                avatarObject.ApplyModifiedPropertiesWithoutUndo();
+                AssignRaceCourse(playerTracker, course);
 
-            Rigidbody body = board.AddComponent<Rigidbody>();
-            body.mass = 24f;
-            body.useGravity = true;
-            body.interpolation = RigidbodyInterpolation.Interpolate;
-            body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                GameObject arrowRoot = new GameObject("Checkpoint Arrow");
+                arrowRoot.transform.SetParent(player.transform, false);
+                arrowRoot.transform.localPosition = new Vector3(0f, 2.6f, 0f);
+                arrowRoot.SetActive(false);
+                GameObject arrowMesh = CreatePrimitive("checkpoint-arrow-mesh", PrimitiveType.Cylinder, arrowRoot.transform, Vector3.zero, Vector3.zero, new Vector3(0.5f, 0.9f, 0.5f), materials.NeonOrange);
+                MarkDynamic(arrowMesh);
+                RemoveCollider(arrowMesh);
 
-            BoxCollider boardCollider = board.AddComponent<BoxCollider>();
-            boardCollider.center = new Vector3(0f, 0.18f, 0f);
-            boardCollider.size = new Vector3(2.8f, 0.38f, 6.2f);
+                RaceCheckpointGuide checkpointGuide = player.AddComponent<RaceCheckpointGuide>();
+                SerializedObject guideObject = new SerializedObject(checkpointGuide);
+                guideObject.FindProperty("tracker").objectReferenceValue = playerTracker;
+                guideObject.FindProperty("arrowRoot").objectReferenceValue = arrowRoot.transform;
+                guideObject.ApplyModifiedPropertiesWithoutUndo();
+            }
 
-            HoverboardMotor boardMotor = board.AddComponent<HoverboardMotor>();
-            boardMotor.enabled = false;
+            if (includeLocalPlayer)
+            {
+                GameObject board = new GameObject("Prototype Hoverboard");
+                board.transform.SetParent(prototype, false);
+                board.transform.localPosition = new Vector3(5f, 1.45f, -28f);
+                board.transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
 
-            HoverboardMount boardMount = board.AddComponent<HoverboardMount>();
+                Rigidbody body = board.AddComponent<Rigidbody>();
+                body.mass = 24f;
+                body.useGravity = true;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+                body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
 
-            GameObject boardDeck = CreatePrimitive("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), Vector3.zero, new Vector3(2.8f, 0.22f, 6.2f), materials.MetalDark);
-            MarkDynamic(boardDeck);
-            RemoveCollider(boardDeck);
-            GameObject boardTrim = CreatePrimitive("hoverboard-neon-trim", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.36f, 0f), Vector3.zero, new Vector3(3.05f, 0.08f, 6.5f), materials.NeonOrange);
-            MarkDynamic(boardTrim);
-            RemoveCollider(boardTrim);
+                BoxCollider boardCollider = board.AddComponent<BoxCollider>();
+                boardCollider.center = new Vector3(0f, 0.18f, 0f);
+                boardCollider.size = new Vector3(2.8f, 0.38f, 6.2f);
 
-            GameObject groundProbe = new GameObject("Ground Probe");
-            groundProbe.transform.SetParent(board.transform, false);
-            groundProbe.transform.localPosition = new Vector3(0f, -0.45f, 0f);
+                boardMotor = board.AddComponent<HoverboardMotor>();
+                boardMotor.enabled = false;
 
-            GameObject riderSocket = new GameObject("Rider Socket");
-            riderSocket.transform.SetParent(board.transform, false);
-            riderSocket.transform.localPosition = new Vector3(0f, 1.15f, -0.2f);
+                HoverboardMount boardMount = board.AddComponent<HoverboardMount>();
 
-            GameObject dismountPoint = new GameObject("Dismount Point");
-            dismountPoint.transform.SetParent(board.transform, false);
-            dismountPoint.transform.localPosition = new Vector3(3.2f, 0.25f, 0f);
+                GameObject boardDeck = CreatePrimitive("hoverboard-deck-visual", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.2f, 0f), Vector3.zero, new Vector3(2.8f, 0.22f, 6.2f), materials.MetalDark);
+                MarkDynamic(boardDeck);
+                RemoveCollider(boardDeck);
+                GameObject boardTrim = CreatePrimitive("hoverboard-neon-trim", PrimitiveType.Cube, board.transform, new Vector3(0f, 0.36f, 0f), Vector3.zero, new Vector3(3.05f, 0.08f, 6.5f), materials.NeonOrange);
+                MarkDynamic(boardTrim);
+                RemoveCollider(boardTrim);
 
-            SerializedObject boardMotorObject = new SerializedObject(boardMotor);
-            boardMotorObject.FindProperty("groundProbe").objectReferenceValue = groundProbe.transform;
-            boardMotorObject.ApplyModifiedPropertiesWithoutUndo();
+                GameObject groundProbe = new GameObject("Ground Probe");
+                groundProbe.transform.SetParent(board.transform, false);
+                groundProbe.transform.localPosition = new Vector3(0f, -0.45f, 0f);
 
-            SerializedObject mountObject = new SerializedObject(boardMount);
-            mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
-            mountObject.ApplyModifiedPropertiesWithoutUndo();
-            HoverboardMountController mountController = player.AddComponent<HoverboardMountController>();
-            SerializedObject mountControllerObject = new SerializedObject(mountController);
-            mountControllerObject.FindProperty("avatarController").objectReferenceValue = controller;
-            mountControllerObject.FindProperty("hoverboardMotor").objectReferenceValue = boardMotor;
-            mountControllerObject.FindProperty("hoverboardMount").objectReferenceValue = boardMount;
-            mountControllerObject.FindProperty("rider").objectReferenceValue = player.transform;
-            mountControllerObject.FindProperty("dismountPoint").objectReferenceValue = dismountPoint.transform;
-            mountControllerObject.FindProperty("mountDistance").floatValue = 7f;
-            mountControllerObject.ApplyModifiedPropertiesWithoutUndo();
+                GameObject riderSocket = new GameObject("Rider Socket");
+                riderSocket.transform.SetParent(board.transform, false);
+                riderSocket.transform.localPosition = new Vector3(0f, 1.15f, -0.2f);
 
-            CinemachinePlayerRig playerRig = player.AddComponent<CinemachinePlayerRig>();
-            SerializedObject rigObject = new SerializedObject(playerRig);
-            rigObject.FindProperty("playerCamera").objectReferenceValue = camera;
-            rigObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
-            rigObject.FindProperty("mountController").objectReferenceValue = mountController;
-            rigObject.ApplyModifiedPropertiesWithoutUndo();
+                GameObject dismountPoint = new GameObject("Dismount Point");
+                dismountPoint.transform.SetParent(board.transform, false);
+                dismountPoint.transform.localPosition = new Vector3(3.2f, 0.25f, 0f);
 
-            GameObject hudObject = new GameObject("Race Prototype HUD");
-            hudObject.transform.SetParent(prototype, false);
-            RacePrototypeHud hud = hudObject.AddComponent<RacePrototypeHud>();
-            SerializedObject hudObjectSerialized = new SerializedObject(hud);
-            hudObjectSerialized.FindProperty("tracker").objectReferenceValue = playerTracker;
-            hudObjectSerialized.FindProperty("hoverboard").objectReferenceValue = boardMotor;
-            hudObjectSerialized.FindProperty("showControls").boolValue = true;
-            hudObjectSerialized.ApplyModifiedPropertiesWithoutUndo();
+                SerializedObject boardMotorObject = new SerializedObject(boardMotor);
+                boardMotorObject.FindProperty("groundProbe").objectReferenceValue = groundProbe.transform;
+                boardMotorObject.ApplyModifiedPropertiesWithoutUndo();
 
-            CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nEsc — free cursor", Color.white);
+                SerializedObject mountObject = new SerializedObject(boardMount);
+                mountObject.FindProperty("riderSocket").objectReferenceValue = riderSocket.transform;
+                mountObject.ApplyModifiedPropertiesWithoutUndo();
+                Transform playerTransform = controller.transform;
+                HoverboardMountController mountController = playerTransform.GetComponent<HoverboardMountController>();
+                if (mountController == null)
+                {
+                    mountController = playerTransform.gameObject.AddComponent<HoverboardMountController>();
+                }
+
+                SerializedObject mountControllerObject = new SerializedObject(mountController);
+                mountControllerObject.FindProperty("avatarController").objectReferenceValue = controller;
+                mountControllerObject.FindProperty("hoverboardMotor").objectReferenceValue = boardMotor;
+                mountControllerObject.FindProperty("hoverboardMount").objectReferenceValue = boardMount;
+                mountControllerObject.FindProperty("rider").objectReferenceValue = playerTransform;
+                mountControllerObject.FindProperty("dismountPoint").objectReferenceValue = dismountPoint.transform;
+                mountControllerObject.FindProperty("mountDistance").floatValue = 7f;
+                mountControllerObject.ApplyModifiedPropertiesWithoutUndo();
+
+                CinemachinePlayerRig playerRig = playerTransform.GetComponent<CinemachinePlayerRig>();
+                if (playerRig == null)
+                {
+                    playerRig = playerTransform.gameObject.AddComponent<CinemachinePlayerRig>();
+                }
+
+                Camera camera = playerTransform.GetComponentInChildren<Camera>(true);
+                Transform pivot = playerTransform.Find("Camera Pivot");
+                SerializedObject rigObject = new SerializedObject(playerRig);
+                rigObject.FindProperty("playerCamera").objectReferenceValue = camera;
+                rigObject.FindProperty("cameraPivot").objectReferenceValue = pivot;
+                rigObject.FindProperty("mountController").objectReferenceValue = mountController;
+                rigObject.ApplyModifiedPropertiesWithoutUndo();
+
+                GameObject hudObject = new GameObject("Race Prototype HUD");
+                hudObject.transform.SetParent(prototype, false);
+                RacePrototypeHud hud = hudObject.AddComponent<RacePrototypeHud>();
+                SerializedObject hudObjectSerialized = new SerializedObject(hud);
+                hudObjectSerialized.FindProperty("tracker").objectReferenceValue = playerTracker;
+                hudObjectSerialized.FindProperty("hoverboard").objectReferenceValue = boardMotor;
+                hudObjectSerialized.FindProperty("showControls").boolValue = true;
+                hudObjectSerialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            string controlsLabel = includeLocalPlayer
+                ? "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nEsc — free cursor"
+                : "Network Hub\nUse the session panel to Host or Join\nEach player spawns with a personal hoverboard (E to mount)";
+
+            CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), controlsLabel, Color.white);
         }
 
         private static void AssignRaceCourse(RaceLapTracker tracker, RaceCourseDefinition course)
