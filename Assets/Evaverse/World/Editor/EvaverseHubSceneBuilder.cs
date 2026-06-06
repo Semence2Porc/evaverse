@@ -4,8 +4,12 @@ using Evaverse.Gameplay.Runtime.Avatar;
 using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.View;
+using Evaverse.Networking.Runtime;
+using Evaverse.Networking.Runtime.Sessions;
 using Evaverse.World.Runtime.Authoring;
 using Evaverse.World.Runtime.Definitions;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -21,20 +25,44 @@ namespace Evaverse.World.Editor
         private const string MeshFolder = "Assets/_Project/Art/Generated/World";
         private const string SeedPath = "Assets/_Project/MapSeeds/EvaverseHubSeed.json";
 
+        private const string NetworkPlayerPrefabPath = "Assets/Evaverse/Networking/Resources/Prefabs/EvaverseNetworkPlayer.prefab";
+
         private static readonly Vector3 PlazaCenter = Vector3.zero;
 
         [MenuItem("Evaverse/World/Build Revival Hub Scene")]
         public static void BuildFromMenu()
         {
-            Build();
+            Build(false, SessionBackend.Local);
+        }
+
+        [MenuItem("Evaverse/World/Build Revival Hub Scene - Netcode Listen (no baked single-player prototype)")]
+        public static void BuildFromMenuNetcode()
+        {
+            Build(true, SessionBackend.Netcode);
+        }
+
+        [MenuItem("Evaverse/World/Build Revival Hub Scene - Relay (no baked single-player prototype)")]
+        public static void BuildFromMenuRelay()
+        {
+            Build(true, SessionBackend.MultiplayerRelay);
         }
 
         public static void BuildFromCommandLine()
         {
-            Build();
+            Build(false, SessionBackend.Local);
         }
 
-        private static void Build()
+        public static void BuildFromCommandLineNetcodeHub()
+        {
+            Build(true, SessionBackend.Netcode);
+        }
+
+        public static void BuildFromCommandLineRelayHub()
+        {
+            Build(true, SessionBackend.MultiplayerRelay);
+        }
+
+        private static void Build(bool skipLocalPrototype, SessionBackend sessionBackend)
         {
             EnsureProjectFolders();
 
@@ -57,7 +85,16 @@ namespace Evaverse.World.Editor
             BuildDistricts(root.transform, materials, spireMesh);
             RaceCourseDefinition course = BuildRaceCourse(root.transform, materials);
             BuildSpawnPoints(root.transform);
-            BuildPlayablePrototype(root.transform, materials, course);
+            BuildSessionStack(root.transform, sessionBackend);
+            if (!skipLocalPrototype)
+            {
+                BuildPlayablePrototype(root.transform, materials, course);
+            }
+            else
+            {
+                _ = course;
+            }
+
             BuildOverviewCamera();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -580,6 +617,59 @@ namespace Evaverse.World.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private static void BuildSessionStack(Transform parent, SessionBackend mode)
+        {
+            GameObject session = new GameObject("_EvaverseSession");
+            session.transform.SetParent(parent, false);
+            session.AddComponent<SessionConfig>();
+            session.AddComponent<UnityServicesBootstrap>();
+
+            SessionBootstrap bootstrap = session.AddComponent<SessionBootstrap>();
+            SerializedObject bootSerialized = new SerializedObject(bootstrap);
+            bootSerialized.FindProperty("backend").enumValueIndex = (int)mode;
+            bootSerialized.FindProperty("registerDebugNetcodeHud").boolValue = true;
+            bootSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            EvaverseSessionDebugHud hud = session.AddComponent<EvaverseSessionDebugHud>();
+            hud.enabled = false;
+
+            if (mode != SessionBackend.Local)
+            {
+                BuildNetcodeManagers(parent);
+            }
+        }
+
+        private static void BuildNetcodeManagers(Transform parent)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(NetworkPlayerPrefabPath);
+            if (prefab == null)
+            {
+                Debug.LogWarning(
+                    $"Evaverse: network player prefab missing at {NetworkPlayerPrefabPath}. Run 'Evaverse/Networking/Bake Network Player Prefab' before a Netcode hub build.");
+            }
+
+            GameObject nmGo = new GameObject("_EvaverseNetcode");
+            nmGo.transform.SetParent(parent, false);
+            nmGo.AddComponent<UnityTransport>();
+            nmGo.AddComponent<NetworkManager>();
+            NetcodeBootstrap nb = nmGo.AddComponent<NetcodeBootstrap>();
+
+            if (prefab != null)
+            {
+                SerializedObject nbSerialized = new SerializedObject(nb);
+                nbSerialized.FindProperty("playerPrefab").objectReferenceValue = prefab;
+                nbSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+                NetworkManager networkManager = nmGo.GetComponent<NetworkManager>();
+                if (networkManager.NetworkConfig == null)
+                {
+                    networkManager.NetworkConfig = new NetworkConfig();
+                }
+
+                networkManager.NetworkConfig.PlayerPrefab = prefab;
+            }
+        }
+
         private static void BuildPlayablePrototype(Transform parent, MaterialLibrary materials, RaceCourseDefinition course)
         {
             Transform prototype = CreateGroup(parent, "Playable Prototype");
@@ -628,7 +718,6 @@ namespace Evaverse.World.Editor
             camera.fieldOfView = 58f;
             camera.nearClipPlane = 0.2f;
             camera.farClipPlane = 1800f;
-            playerCamera.AddComponent<AudioListener>();
 
             SerializedObject avatarObject = new SerializedObject(avatarMotor);
             avatarObject.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;

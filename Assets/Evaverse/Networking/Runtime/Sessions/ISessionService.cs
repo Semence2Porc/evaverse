@@ -4,6 +4,7 @@ namespace Evaverse.Networking.Runtime.Sessions
     {
         bool IsHosting { get; }
         bool IsConnected { get; }
+        string LastJoinCode { get; }
         void StartHost(SessionConfig config);
         void StartClient(string joinCode);
         void Disconnect();

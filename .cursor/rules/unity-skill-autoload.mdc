@@ -1,0 +1,19 @@
+---
+description: Ensure Unity skills are applied whenever editing Unity gameplay/editor code or asmdef files under Assets/. This prevents repeated Unity-specific mistakes (missing metas, asmdef references, batchmode verification) and keeps networking and Web3 patterns consistent.
+globs: Assets/**/*.cs, Assets/**/*.asmdef, Assets/**.asmdef
+alwaysApply: false
+---
+
+When working on files matched by this rule (Unity C# under `Assets/` or any `.asmdef`):
+
+- Always consult and follow these project skills:
+  - `.cursor/skills/unity-workflow/SKILL.md`
+  - `.cursor/skills/unity-architecture/SKILL.md`
+  - `.cursor/skills/unity-multiplayer-netcode/SKILL.md` (when networking/session/spawning/ownership is involved)
+  - `.cursor/skills/unity-web3-integration/SKILL.md` (when wallet/auth/ownership/entitlements are involved)
+
+- Unity hygiene is mandatory:
+  - commit `.meta` files for any new/changed asset/script/folder/asmdef
+  - keep `.asmdef` references complete (including package assemblies like `Unity.Networking.Transport` when required)
+  - after substantive edits, run the repo’s batch verification (`Tools/RebuildHub.ps1`) and fix the first compiler error before continuing
+

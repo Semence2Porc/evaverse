@@ -1,12 +1,12 @@
 {
-  "name": "Evaverse.World.Editor",
-  "rootNamespace": "Evaverse.World.Editor",
+  "name": "Evaverse.Networking.Editor",
+  "rootNamespace": "Evaverse.Networking.Editor",
   "references": [
-    "Evaverse.Core",
-    "Evaverse.Gameplay",
     "Evaverse.Networking",
-    "Evaverse.World",
-    "Unity.Netcode.Runtime"
+    "Evaverse.Gameplay",
+    "Unity.Cinemachine",
+    "Unity.Netcode.Runtime",
+    "Unity.Netcode.Editor"
   ],
   "includePlatforms": [
     "Editor"

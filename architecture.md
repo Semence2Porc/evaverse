@@ -59,6 +59,11 @@ The hub should feel like one huge destination with distinct districts, not a men
 - Relay-backed session hosting first
 - Dedicated server support later if concurrency or fairness requires it
 
+### Current implementation notes (prototype)
+
+- Session bootstrapping supports `MultiplayerRelay` using the Multiplayer Services SDK session API (`WithRelayNetwork()`), generating a join code that peers can use to join.
+- Unity Services initialization + anonymous sign-in is handled by a lightweight bootstrap component so sessions can be created/joined reliably.
+
 ## Browser Constraint Notes
 
 - Unity WebGL is desktop-browser focused and not a reliable mobile target.

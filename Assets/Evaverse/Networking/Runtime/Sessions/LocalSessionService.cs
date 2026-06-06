@@ -6,6 +6,7 @@ namespace Evaverse.Networking.Runtime.Sessions
     {
         public bool IsHosting { get; private set; }
         public bool IsConnected { get; private set; }
+        public string LastJoinCode { get; private set; }
 
         public void Initialize()
         {
@@ -21,13 +22,17 @@ namespace Evaverse.Networking.Runtime.Sessions
         {
             IsHosting = true;
             IsConnected = true;
-            EvaLog.Info($"Started local host session '{config.SessionName}' for up to {config.MaxPlayers} players.");
+            LastJoinCode = null;
+            string name = config != null ? config.SessionName : "(default)";
+            int cap = config != null ? config.MaxPlayers : 8;
+            EvaLog.Info($"Started local host session '{name}' for up to {cap} players.");
         }
 
         public void StartClient(string joinCode)
         {
             IsHosting = false;
             IsConnected = true;
+            LastJoinCode = joinCode;
             EvaLog.Info($"Connected local client with join code '{joinCode}'.");
         }
 
@@ -40,6 +45,7 @@ namespace Evaverse.Networking.Runtime.Sessions
 
             IsHosting = false;
             IsConnected = false;
+            LastJoinCode = null;
             EvaLog.Info("Disconnected local session.");
         }
     }

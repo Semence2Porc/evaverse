@@ -1,0 +1,16 @@
+---
+description: Keep `architecture.md` accurate. Use when making big architecture changes: adding a subsystem/service, changing bootstraps, introducing networking/web3 flows, new assemblies, or new project-wide pipelines. Requires updating `architecture.md` in the same change-set.
+alwaysApply: false
+---
+
+If the current work qualifies as a **big change** (any of: new subsystem/service boundary, netcode/session flow changes, web3 auth/ownership flow changes, new `.asmdef` modules or significant reference changes, new editor automation/build scripts, new asset pipeline conventions):
+
+- **Update `architecture.md` before finishing**:
+  - Add/adjust the relevant section(s)
+  - Capture “what changed” and “why” (1–3 bullets)
+  - Note any new constraints, dependencies, or verification steps (batchmode scripts, required packages)
+
+- Keep `architecture.md` concise and current:
+  - prefer small deltas rather than rewriting the whole doc
+  - remove outdated guidance when replaced
+

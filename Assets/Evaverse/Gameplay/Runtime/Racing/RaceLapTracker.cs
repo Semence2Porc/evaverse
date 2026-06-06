@@ -83,6 +83,12 @@ namespace Evaverse.Gameplay.Runtime.Racing
             finishedSeconds = 0f;
         }
 
+        public void SetCourse(RaceCourseDefinition courseDefinition)
+        {
+            course = courseDefinition;
+            ResetProgress();
+        }
+
         public bool TryPassCheckpoint(RaceCheckpoint checkpoint)
         {
             if (course == null || checkpoint == null || Finished || CountdownActive || course.CheckpointCount == 0)

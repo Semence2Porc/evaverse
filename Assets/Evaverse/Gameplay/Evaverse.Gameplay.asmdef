@@ -3,7 +3,9 @@
   "rootNamespace": "Evaverse.Gameplay",
   "references": [
     "Evaverse.Core",
+    "Unity.Netcode.Runtime",
     "Unity.Cinemachine",
+    "UnityEngine.AudioModule",
     "Unity.InputSystem"
   ],
   "includePlatforms": [],
