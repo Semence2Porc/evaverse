@@ -1,3 +1,4 @@
+using Evaverse.Meta.Runtime.Identity;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -24,11 +25,29 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             nameLabel = label;
         }
 
+        public void SetDisplayName(string preferredName)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            string resolved = PlayerDisplayNameStore.Sanitize(preferredName);
+            if (string.IsNullOrWhiteSpace(resolved))
+            {
+                resolved = $"Racer {OwnerClientId}";
+            }
+
+            PlayerDisplayNameStore.Save(resolved);
+            displayName.Value = new FixedString32Bytes(resolved);
+        }
+
         public override void OnNetworkSpawn()
         {
             if (IsOwner)
             {
-                displayName.Value = new FixedString32Bytes($"Racer {OwnerClientId}");
+                string preferred = PlayerDisplayNameStore.ResolveOrDefault(OwnerClientId);
+                displayName.Value = new FixedString32Bytes(preferred);
             }
 
             displayName.OnValueChanged += HandleNameChanged;

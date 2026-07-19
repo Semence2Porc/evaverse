@@ -1,5 +1,7 @@
 using System;
 using Evaverse.Core.Runtime.App;
+using Evaverse.Gameplay.Runtime.Netcode;
+using Evaverse.Meta.Runtime.Identity;
 using Evaverse.Networking.Runtime.Sessions;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,6 +13,7 @@ namespace Evaverse.UI.Runtime.Session
         [SerializeField] private SessionConfig sessionConfig;
         [SerializeField] private bool showDebugDetails;
 
+        private string displayNameInput = string.Empty;
         private string joinInput = string.Empty;
         private string copyFeedback = string.Empty;
         private float copyFeedbackUntil;
@@ -26,6 +29,12 @@ namespace Evaverse.UI.Runtime.Session
 
         private void Start()
         {
+            displayNameInput = PlayerDisplayNameStore.Load();
+            if (string.IsNullOrWhiteSpace(displayNameInput))
+            {
+                displayNameInput = "Pilot";
+            }
+
             if (!ServiceRegistry.TryResolve<ISessionService>(out var sessionService))
             {
                 return;
@@ -50,7 +59,7 @@ namespace Evaverse.UI.Runtime.Session
 
             bool connected = sessionService.IsConnected;
             bool busy = sessionService.IsBusy;
-            float panelHeight = connected ? 236f : 250f;
+            float panelHeight = connected ? 268f : 300f;
             if (showDebugDetails)
             {
                 panelHeight += 56f;
@@ -101,6 +110,10 @@ namespace Evaverse.UI.Runtime.Session
             GUILayout.Label(ResolveStatusLine(sessionService), HasError(sessionService) ? errorStyle : labelStyle);
             GUILayout.Space(6f);
 
+            GUILayout.Label("Display name", labelStyle);
+            displayNameInput = GUILayout.TextField(displayNameInput, textFieldStyle, GUILayout.Height(28f));
+            GUILayout.Space(6f);
+
             GUILayout.Label("Join code / address", labelStyle);
             joinInput = GUILayout.TextField(joinInput, textFieldStyle, GUILayout.Height(30f));
             GUILayout.Space(8f);
@@ -109,6 +122,7 @@ namespace Evaverse.UI.Runtime.Session
             GUI.enabled = !sessionService.IsBusy;
             if (GUILayout.Button("Host", buttonStyle, GUILayout.Height(34f)))
             {
+                PersistDisplayName();
                 sessionService.StartHost(ResolveConfig());
                 if (!string.IsNullOrWhiteSpace(sessionService.JoinCode))
                 {
@@ -118,6 +132,7 @@ namespace Evaverse.UI.Runtime.Session
 
             if (GUILayout.Button("Join", buttonStyle, GUILayout.Height(34f)))
             {
+                PersistDisplayName();
                 sessionService.StartClient(joinInput);
             }
 
@@ -128,6 +143,15 @@ namespace Evaverse.UI.Runtime.Session
         private void DrawConnectedState(ISessionService sessionService)
         {
             GUILayout.Label(ResolveStatusLine(sessionService), labelStyle);
+
+            GUILayout.Space(4f);
+            GUILayout.Label("Display name", labelStyle);
+            displayNameInput = GUILayout.TextField(displayNameInput, textFieldStyle, GUILayout.Height(28f));
+            if (GUILayout.Button("Update name", buttonStyle, GUILayout.Height(26f)))
+            {
+                PersistDisplayName();
+                ApplyDisplayNameToOwnedPlayer();
+            }
 
             if (!string.IsNullOrWhiteSpace(sessionService.JoinCode))
             {
@@ -149,7 +173,7 @@ namespace Evaverse.UI.Runtime.Session
                 : 1;
             GUILayout.Label($"Players in session: {playerCount}", labelStyle);
 
-            GUILayout.Space(10f);
+            GUILayout.Space(8f);
             if (GUILayout.Button("Disconnect", buttonStyle, GUILayout.Height(32f)))
             {
                 sessionService.Disconnect();
@@ -161,6 +185,30 @@ namespace Evaverse.UI.Runtime.Session
                 else
                 {
                     joinInput = string.Empty;
+                }
+            }
+        }
+
+        private void PersistDisplayName()
+        {
+            string sanitized = PlayerDisplayNameStore.Sanitize(displayNameInput);
+            if (string.IsNullOrWhiteSpace(sanitized))
+            {
+                sanitized = "Pilot";
+            }
+
+            displayNameInput = sanitized;
+            PlayerDisplayNameStore.Save(sanitized);
+        }
+
+        private void ApplyDisplayNameToOwnedPlayer()
+        {
+            NetworkPlayerDisplayName[] names = FindObjectsByType<NetworkPlayerDisplayName>(FindObjectsSortMode.None);
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (names[i].IsOwner)
+                {
+                    names[i].SetDisplayName(displayNameInput);
                 }
             }
         }

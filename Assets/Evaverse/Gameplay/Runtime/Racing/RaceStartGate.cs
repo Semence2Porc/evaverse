@@ -1,3 +1,5 @@
+using Evaverse.Gameplay.Runtime.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Evaverse.Gameplay.Runtime.Racing
@@ -18,6 +20,19 @@ namespace Evaverse.Gameplay.Runtime.Racing
             RaceLapTracker tracker = other.GetComponentInParent<RaceLapTracker>();
             if (tracker == null)
             {
+                return;
+            }
+
+            NetworkObject networkObject = other.GetComponentInParent<NetworkObject>();
+            NetworkRaceSessionTracker sessionTracker = NetworkRaceSessionTracker.Instance;
+            if (networkObject != null && sessionTracker != null && sessionTracker.IsSpawned)
+            {
+                if (!networkObject.IsOwner)
+                {
+                    return;
+                }
+
+                sessionTracker.RequestSyncedStart(countdownSeconds);
                 return;
             }
 

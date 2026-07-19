@@ -9,6 +9,7 @@ using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
 using Evaverse.Gameplay.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Meta;
 using Evaverse.UI.Runtime.Racing;
 using Evaverse.UI.Runtime.Session;
 using Evaverse.World.Runtime.Authoring;
@@ -130,6 +131,13 @@ namespace Evaverse.World.Editor
 
             BuildOverviewCamera();
 
+            if (mode == HubBuildMode.Local)
+            {
+                GameObject metaRoot = new GameObject("_EvaverseMeta");
+                metaRoot.transform.SetParent(root.transform, false);
+                metaRoot.AddComponent<MetaProgressionHud>();
+            }
+
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EnsureSceneInBuildSettings();
@@ -172,6 +180,7 @@ namespace Evaverse.World.Editor
             networkingRoot.AddComponent<NetworkRaceSessionTracker>();
             networkingRoot.AddComponent<NetcodeSessionLifecycleBridge>();
             networkingRoot.AddComponent<RaceSessionFinishBoardUi>();
+            networkingRoot.AddComponent<MetaProgressionHud>();
 
             EvaverseSessionJoinUi joinUi = networkingRoot.AddComponent<EvaverseSessionJoinUi>();
             SerializedObject joinUiObject = new SerializedObject(joinUi);

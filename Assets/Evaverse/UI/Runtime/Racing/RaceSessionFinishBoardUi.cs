@@ -67,6 +67,7 @@ namespace Evaverse.UI.Runtime.Racing
 
             if (finishes.Count == 0)
             {
+                GUILayout.Label("Hit the green gate to start a synced race.", waitingStyle);
                 GUILayout.Label("Waiting for the first finisher...", waitingStyle);
                 GUILayout.EndArea();
                 return;

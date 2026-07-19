@@ -3,6 +3,7 @@ using Evaverse.Gameplay.Runtime.Hoverboard;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Meta;
 using Evaverse.UI.Runtime.Racing;
 using Evaverse.Networking.Runtime.Sessions;
 using Evaverse.UI.Runtime.Session;
@@ -77,6 +78,7 @@ namespace Evaverse.World.Editor
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<NetworkRaceSessionTracker>(), "NetworkRaceSessionTracker");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<RaceSessionFinishBoardUi>(), "RaceSessionFinishBoardUi");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<NetcodeSessionLifecycleBridge>(), "NetcodeSessionLifecycleBridge");
+                valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<MetaProgressionHud>(), "MetaProgressionHud");
             }
             else
             {
@@ -84,6 +86,7 @@ namespace Evaverse.World.Editor
                 valid &= RequireObject("Race Prototype HUD");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<RacePrototypeHud>(), "RacePrototypeHud");
                 valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<HoverboardMountController>(), "HoverboardMountController");
+                valid &= RequireComponent(UnityEngine.Object.FindFirstObjectByType<MetaProgressionHud>(), "MetaProgressionHud");
             }
 
             if (course != null && course.CheckpointCount <= 0)

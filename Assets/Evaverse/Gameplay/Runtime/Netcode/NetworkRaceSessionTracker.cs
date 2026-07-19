@@ -12,8 +12,15 @@ namespace Evaverse.Gameplay.Runtime.Netcode
         public static NetworkRaceSessionTracker Instance { get; private set; }
 
         private readonly NetworkList<RaceFinishEntry> finishes = new();
+        private readonly NetworkVariable<float> sessionCountdownSeconds = new(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
+        private float lastSyncedStartRequestAt = -10f;
 
         public NetworkList<RaceFinishEntry> Finishes => finishes;
+        public bool HasActiveSessionCountdown => sessionCountdownSeconds.Value > 0f;
 
         private void OnEnable()
         {
@@ -33,6 +40,62 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (IsServer)
             {
                 finishes.Clear();
+                sessionCountdownSeconds.Value = 0f;
+            }
+        }
+
+        public void RequestSyncedStart(float countdownSeconds)
+        {
+            if (Time.unscaledTime - lastSyncedStartRequestAt < 1f)
+            {
+                return;
+            }
+
+            lastSyncedStartRequestAt = Time.unscaledTime;
+
+            if (IsServer)
+            {
+                BeginSyncedStart(countdownSeconds);
+                return;
+            }
+
+            RequestSyncedStartServerRpc(countdownSeconds);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestSyncedStartServerRpc(float countdownSeconds)
+        {
+            BeginSyncedStart(countdownSeconds);
+        }
+
+        private void BeginSyncedStart(float countdownSeconds)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            finishes.Clear();
+            float duration = Mathf.Max(0.1f, countdownSeconds);
+            sessionCountdownSeconds.Value = duration;
+            StartCountdownClientRpc(duration);
+        }
+
+        [ClientRpc]
+        private void StartCountdownClientRpc(float countdownSeconds)
+        {
+            RaceLapTracker[] trackers = FindObjectsByType<RaceLapTracker>(FindObjectsSortMode.None);
+            for (int i = 0; i < trackers.Length; i++)
+            {
+                RaceLapTracker tracker = trackers[i];
+                NetworkObject networkObject = tracker.GetComponent<NetworkObject>();
+                if (networkObject == null || !networkObject.IsOwner)
+                {
+                    continue;
+                }
+
+                tracker.ResetProgress();
+                tracker.StartCountdown(countdownSeconds);
             }
         }
 
