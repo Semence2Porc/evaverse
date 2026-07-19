@@ -1,5 +1,7 @@
 using Evaverse.Gameplay.Runtime.Avatar;
+using Evaverse.Gameplay.Runtime.Cosmetics;
 using Evaverse.Gameplay.Runtime.Hoverboard;
+using Evaverse.Gameplay.Runtime.Meta;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.View;
 using Evaverse.World.Runtime.Authoring;
@@ -179,6 +181,25 @@ namespace Evaverse.Gameplay.Runtime.Netcode
             if (finishReporter != null)
             {
                 finishReporter.Configure(lapTracker, displayName);
+            }
+
+            ProgressionBoostApplier boostApplier = GetComponent<ProgressionBoostApplier>();
+            if (boostApplier == null)
+            {
+                boostApplier = gameObject.AddComponent<ProgressionBoostApplier>();
+            }
+
+            boostApplier.Apply();
+
+            CosmeticAppearanceApplier cosmetics = GetComponent<CosmeticAppearanceApplier>();
+            if (cosmetics == null)
+            {
+                cosmetics = gameObject.AddComponent<CosmeticAppearanceApplier>();
+            }
+
+            if (IsOwner)
+            {
+                cosmetics.ApplyDemoLoadout();
             }
         }
     }

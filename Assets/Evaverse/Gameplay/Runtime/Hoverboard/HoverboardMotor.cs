@@ -27,6 +27,7 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         public float CurrentSpeed => body == null ? 0f : Vector3.Dot(body.linearVelocity, transform.forward);
         public bool InputEnabled { get; set; } = true;
+        public float SpeedMultiplier { get; set; } = 1f;
 
         private void Awake()
         {
@@ -102,20 +103,23 @@ namespace Evaverse.Gameplay.Runtime.Hoverboard
 
         private void ApplyDrive()
         {
-            if (Mathf.Abs(CurrentSpeed) < maxSpeed || Mathf.Sign(steerInput.y) != Mathf.Sign(CurrentSpeed))
+            float speedCap = maxSpeed * Mathf.Max(0.1f, SpeedMultiplier);
+            float accel = acceleration * Mathf.Max(0.1f, SpeedMultiplier);
+
+            if (Mathf.Abs(CurrentSpeed) < speedCap || Mathf.Sign(steerInput.y) != Mathf.Sign(CurrentSpeed))
             {
-                body.AddForce(transform.forward * (steerInput.y * acceleration), ForceMode.Acceleration);
+                body.AddForce(transform.forward * (steerInput.y * accel), ForceMode.Acceleration);
             }
 
             if (boostRequested)
             {
-                body.AddForce(transform.forward * boostForce, ForceMode.VelocityChange);
+                body.AddForce(transform.forward * (boostForce * Mathf.Max(0.1f, SpeedMultiplier)), ForceMode.VelocityChange);
             }
 
             Vector3 planarVelocity = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up);
-            if (planarVelocity.magnitude > maxSpeed)
+            if (planarVelocity.magnitude > speedCap)
             {
-                Vector3 clamped = planarVelocity.normalized * maxSpeed;
+                Vector3 clamped = planarVelocity.normalized * speedCap;
                 body.linearVelocity = new Vector3(clamped.x, body.linearVelocity.y, clamped.z);
             }
         }

@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using Evaverse.Gameplay.Runtime.Avatar;
+using Evaverse.Gameplay.Runtime.Cosmetics;
 using Evaverse.Gameplay.Runtime.Hoverboard;
+using Evaverse.Gameplay.Runtime.Hub;
+using Evaverse.Gameplay.Runtime.Meta;
+using Evaverse.Gameplay.Runtime.Netcode;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.View;
 using Evaverse.Networking.Editor;
 using Evaverse.Networking.Runtime.Netcode;
 using Evaverse.Networking.Runtime.Sessions;
-using Evaverse.Gameplay.Runtime.Netcode;
-using Evaverse.Networking.Runtime.Netcode;
+using Evaverse.UI.Runtime.Hub;
 using Evaverse.UI.Runtime.Meta;
 using Evaverse.UI.Runtime.Racing;
 using Evaverse.UI.Runtime.Session;
@@ -118,6 +121,7 @@ namespace Evaverse.World.Editor
             BuildDistricts(root.transform, materials, spireMesh);
             RaceCourseDefinition course = BuildRaceCourse(root.transform, materials);
             BuildSpawnPoints(root.transform);
+            BuildDistrictPortals(root.transform, materials);
 
             if (mode == HubBuildMode.Local)
             {
@@ -136,6 +140,7 @@ namespace Evaverse.World.Editor
                 GameObject metaRoot = new GameObject("_EvaverseMeta");
                 metaRoot.transform.SetParent(root.transform, false);
                 metaRoot.AddComponent<MetaProgressionHud>();
+                metaRoot.AddComponent<DistrictPortalPromptHud>();
             }
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -181,6 +186,7 @@ namespace Evaverse.World.Editor
             networkingRoot.AddComponent<NetcodeSessionLifecycleBridge>();
             networkingRoot.AddComponent<RaceSessionFinishBoardUi>();
             networkingRoot.AddComponent<MetaProgressionHud>();
+            networkingRoot.AddComponent<DistrictPortalPromptHud>();
 
             EvaverseSessionJoinUi joinUi = networkingRoot.AddComponent<EvaverseSessionJoinUi>();
             SerializedObject joinUiObject = new SerializedObject(joinUi);
@@ -282,7 +288,10 @@ namespace Evaverse.World.Editor
             {
                 new SpawnSpec("plaza-default", "Central Plaza", new Vector3(0f, 1.2f, -28f), new Vector3(0f, 0f, 0f), true, "default", "social", "safe"),
                 new SpawnSpec("race-gate", "EVA Grand Prix Gate", new Vector3(0f, 1.2f, -210f), new Vector3(0f, 0f, 0f), false, "activity", "race"),
-                new SpawnSpec("cosmic-stadium", "Cosmic Stadium", new Vector3(250f, 1.2f, 315f), new Vector3(0f, -140f, 0f), false, "activity", "cosmic")
+                new SpawnSpec("cosmic-stadium", "Cosmic Stadium", new Vector3(250f, 1.2f, 315f), new Vector3(0f, -140f, 0f), false, "activity", "cosmic"),
+                new SpawnSpec("lava-forge", "Lava Forge", new Vector3(420f, 1.2f, 0f), new Vector3(0f, -90f, 0f), false, "activity", "lava"),
+                new SpawnSpec("jungle-canopy", "Jungle Canopy", new Vector3(-320f, 1.2f, 260f), new Vector3(0f, 135f, 0f), false, "activity", "jungle"),
+                new SpawnSpec("desert-dunes", "Desert Dunes", new Vector3(-320f, 1.2f, -260f), new Vector3(0f, 35f, 0f), false, "activity", "desert")
             };
 
             spawns.arraySize = specs.Length;
@@ -674,6 +683,9 @@ namespace Evaverse.World.Editor
             CreateSpawn(spawns, "plaza-default", "Central Plaza", new Vector3(0f, 1.2f, -28f), Vector3.zero, true, new[] { "default", "social", "safe" });
             CreateSpawn(spawns, "race-gate", "EVA Grand Prix Gate", new Vector3(0f, 1.2f, -210f), Vector3.zero, false, new[] { "activity", "race" });
             CreateSpawn(spawns, "cosmic-stadium", "Cosmic Stadium", new Vector3(250f, 1.2f, 315f), new Vector3(0f, -140f, 0f), false, new[] { "activity", "cosmic" });
+            CreateSpawn(spawns, "lava-forge", "Lava Forge", new Vector3(420f, 1.2f, 0f), new Vector3(0f, -90f, 0f), false, new[] { "activity", "lava" });
+            CreateSpawn(spawns, "jungle-canopy", "Jungle Canopy", new Vector3(-320f, 1.2f, 260f), new Vector3(0f, 135f, 0f), false, new[] { "activity", "jungle" });
+            CreateSpawn(spawns, "desert-dunes", "Desert Dunes", new Vector3(-320f, 1.2f, -260f), new Vector3(0f, 35f, 0f), false, new[] { "activity", "desert" });
         }
 
         private static void CreateSpawn(Transform parent, string spawnId, string label, Vector3 position, Vector3 eulerAngles, bool preferred, string[] tags)
@@ -698,6 +710,42 @@ namespace Evaverse.World.Editor
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void BuildDistrictPortals(Transform parent, MaterialLibrary materials)
+        {
+            Transform portals = CreateGroup(parent, "District Portals");
+
+            CreatePortalPad(portals, "portal-to-race", new Vector3(-18f, 0.4f, -40f), "race-gate", "EVA Grand Prix", materials.NeonOrange);
+            CreatePortalPad(portals, "portal-to-cosmic", new Vector3(18f, 0.4f, -40f), "cosmic-stadium", "Cosmic Stadium", materials.NeonMagenta);
+            CreatePortalPad(portals, "portal-to-lava", new Vector3(28f, 0.4f, -18f), "lava-forge", "Lava Forge", materials.Lava);
+            CreatePortalPad(portals, "portal-to-jungle", new Vector3(-28f, 0.4f, -18f), "jungle-canopy", "Jungle Canopy", materials.Jungle);
+            CreatePortalPad(portals, "portal-to-desert", new Vector3(0f, 0.4f, -52f), "desert-dunes", "Desert Dunes", materials.Desert);
+
+            CreatePortalPad(portals, "portal-home-race", new Vector3(0f, 0.4f, -200f), "plaza-default", "Central Plaza", materials.NeonCyan);
+            CreatePortalPad(portals, "portal-home-cosmic", new Vector3(240f, 0.4f, 300f), "plaza-default", "Central Plaza", materials.NeonCyan);
+            CreatePortalPad(portals, "portal-home-lava", new Vector3(400f, 0.4f, 0f), "plaza-default", "Central Plaza", materials.NeonCyan);
+            CreatePortalPad(portals, "portal-home-jungle", new Vector3(-300f, 0.4f, 250f), "plaza-default", "Central Plaza", materials.NeonCyan);
+            CreatePortalPad(portals, "portal-home-desert", new Vector3(-300f, 0.4f, -250f), "plaza-default", "Central Plaza", materials.NeonCyan);
+        }
+
+        private static void CreatePortalPad(Transform parent, string name, Vector3 position, string destinationSpawnId, string label, Material material)
+        {
+            GameObject pad = CreatePrimitive(name, PrimitiveType.Cylinder, parent, position, Vector3.zero, new Vector3(8f, 0.25f, 8f), material);
+            MarkDynamic(pad);
+            if (pad.TryGetComponent(out Collider collider))
+            {
+                collider.isTrigger = true;
+            }
+
+            DistrictPortal portal = pad.AddComponent<DistrictPortal>();
+            SerializedObject portalObject = new SerializedObject(portal);
+            portalObject.FindProperty("destinationSpawnId").stringValue = destinationSpawnId;
+            portalObject.FindProperty("portalLabel").stringValue = label;
+            portalObject.FindProperty("interactDistance").floatValue = 8f;
+            portalObject.ApplyModifiedPropertiesWithoutUndo();
+
+            CreateWorldLabel($"{name}-label", pad.transform, new Vector3(0f, 4f, 0f), $"{label}\nPress F", material.color);
         }
 
         private static void BuildPlayablePrototype(Transform parent, MaterialLibrary materials, RaceCourseDefinition course, bool includeLocalPlayer)
@@ -862,11 +910,15 @@ namespace Evaverse.World.Editor
                 hudObjectSerialized.FindProperty("hoverboard").objectReferenceValue = boardMotor;
                 hudObjectSerialized.FindProperty("showControls").boolValue = true;
                 hudObjectSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+                playerTransform.gameObject.AddComponent<ProgressionBoostApplier>();
+                CosmeticAppearanceApplier cosmetics = playerTransform.gameObject.AddComponent<CosmeticAppearanceApplier>();
+                cosmetics.ApplyDemoLoadout();
             }
 
             string controlsLabel = includeLocalPlayer
-                ? "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nEsc — free cursor"
-                : "Network Hub\nUse the session panel to Host or Join\nEach player spawns with a personal hoverboard (E to mount)";
+                ? "Prototype Controls\nWASD / left stick — move & ride\nShift / L3 — sprint & drift\nSpace / A — jump & boost\nE / X — mount near board\nF — district portals\nEsc — free cursor"
+                : "Network Hub\nUse the session panel to Host or Join\nEach player spawns with a personal hoverboard (E to mount)\nF — district portals";
 
             CreateWorldLabel("prototype-controls-label", prototype, new Vector3(0f, 8f, -48f), controlsLabel, Color.white);
         }

@@ -30,6 +30,7 @@ namespace Evaverse.Gameplay.Runtime.Avatar
         public Vector2 MoveInput { get; private set; }
         public bool IsSprinting { get; private set; }
         public bool InputEnabled { get; set; } = true;
+        public float SpeedMultiplier { get; set; } = 1f;
 
         private void Awake()
         {
@@ -140,7 +141,7 @@ namespace Evaverse.Gameplay.Runtime.Avatar
                 return;
             }
 
-            float speed = IsSprinting ? sprintSpeed : walkSpeed;
+            float speed = (IsSprinting ? sprintSpeed : walkSpeed) * Mathf.Max(0.1f, SpeedMultiplier);
             Vector3 localMove = new Vector3(MoveInput.x, 0f, MoveInput.y);
             Vector3 worldMove = transform.TransformDirection(localMove) * speed;
 

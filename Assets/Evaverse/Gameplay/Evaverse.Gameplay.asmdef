@@ -4,6 +4,7 @@
   "references": [
     "Evaverse.Core",
     "Evaverse.Meta",
+    "Evaverse.Web3",
     "Evaverse.World",
     "Unity.Cinemachine",
     "Unity.InputSystem",

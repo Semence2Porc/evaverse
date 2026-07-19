@@ -1,5 +1,7 @@
 using Evaverse.Gameplay.Runtime.Avatar;
+using Evaverse.Gameplay.Runtime.Cosmetics;
 using Evaverse.Gameplay.Runtime.Hoverboard;
+using Evaverse.Gameplay.Runtime.Meta;
 using Evaverse.Gameplay.Runtime.Netcode;
 using Evaverse.Gameplay.Runtime.Racing;
 using Evaverse.Gameplay.Runtime.View;
@@ -86,6 +88,8 @@ namespace Evaverse.Networking.Editor
             root.AddComponent<NetworkRaceProgressLabel>();
             root.AddComponent<NetworkPlayerDisplayName>();
             root.AddComponent<RaceFinishReporter>();
+            root.AddComponent<ProgressionBoostApplier>();
+            root.AddComponent<CosmeticAppearanceApplier>();
 
             CreateVisual("avatar-capsule-visual", PrimitiveType.Capsule, root.transform, new Vector3(0f, 1f, 0f), new Vector3(0.72f, 1f, 0.72f), cyan);
             CreateVisual("avatar-visor", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.45f, 0.33f), new Vector3(0.5f, 0.12f, 0.08f), orange);
